@@ -95,6 +95,17 @@ class ProductServiceTest {
     }
 
     @Test
+    void restockAddsTheInformedQuantityAndSavesIt() {
+        ProductResponse created = createCable();
+
+        ProductResponse restocked = productService.restock(created.id(), 5);
+
+        assertEquals(5, restocked.stockQuantity());
+        assertEquals(1L, restocked.version());
+        assertEquals(5, productRepository.findById(created.id()).orElseThrow().getStockQuantity());
+    }
+
+    @Test
     void decreaseStockKeepsTheEntityRules() {
         Product product = Product.create("7891000000028", "Película", 3990, 6);
         product.restock(4);

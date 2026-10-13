@@ -59,12 +59,18 @@ public class ProductService {
     }
 
     @Transactional
+    public ProductResponse restock(UUID productId, int quantity) {
+        Product product = findProduct(productId);
+        product.restock(quantity);
+        return productMapper.toResponse(productRepository.saveAndFlush(product));
+    }
+
+    @Transactional
     public ProductResponse reactivate(UUID productId) {
         Product product = findProduct(productId);
         product.reactivate();
         return productMapper.toResponse(productRepository.saveAndFlush(product));
     }
-
 
     @Transactional
     public void decreaseStock(UUID productId, int quantity) {
