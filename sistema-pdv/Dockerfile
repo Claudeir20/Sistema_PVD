@@ -1,0 +1,27 @@
+# Build integrado: compila o frontend, roda todos os testes e gera um único JAR.
+# Se algum teste falhar, a imagem não é gerada (e o deploy não acontece).
+
+FROM node:22-bookworm-slim AS frontend
+WORKDIR /app/frontend
+RUN npm install --global pnpm@10.18.3
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY frontend/ ./
+RUN pnpm exec tsc --noEmit && pnpm test && pnpm build
+
+FROM maven:3.9-eclipse-temurin-21 AS backend
+WORKDIR /app
+COPY backend/ ./backend/
+COPY --from=frontend /app/frontend/dist ./frontend/dist
+WORKDIR /app/backend
+RUN mvn -B clean package -Pwith-frontend
+
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+RUN groupadd --system app && useradd --system --gid app app
+COPY --from=backend --chown=app:app /app/backend/target/sistema-pdv-0.0.1-SNAPSHOT.jar ./app.jar
+USER app
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=50 -XX:+ExitOnOutOfMemoryError"
+ENV SPRING_PROFILES_ACTIVE=prod
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

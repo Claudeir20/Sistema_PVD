@@ -1,0 +1,7 @@
+# IDE (cada pasta também tem seu próprio .gitignore)
+.idea/
+*.iml
+
+# Variáveis locais com senhas
+.env
+.env.*
