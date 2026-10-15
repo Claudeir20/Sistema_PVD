@@ -1,6 +1,7 @@
 package dev.mota.sistema_pdv.product;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -35,6 +36,11 @@ class ProductControllerTest {
     private static ProductResponse cable(int stockQuantity) {
         Instant now = Instant.parse("2026-10-14T12:00:00Z");
         return new ProductResponse(ID, "7891000000011", "Cabo USB-C", 2990L, stockQuantity, 5, true, 0L, now, now);
+    }
+
+    private static ProductResponse cable2V(boolean active) {
+        Instant now = Instant.parse("2026-10-14T12:00:00Z");
+        return new ProductResponse(ID, "7891000000011",  "Cabo USB-C", 2990L,10 , 5, active, 0L, now, now  );
     }
 
     @Test
@@ -109,14 +115,49 @@ class ProductControllerTest {
     }
 
     @Test
-    void restock() {
+    void restockSendsTheQuantityToTheService() throws Exception {
+
+        when(productService.restock(any(), anyInt())).thenReturn(cable(10));
+
+        mvc.perform(post("/api/products/{id}/restock", ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        
+                        {"quantity": 10}
+                        
+                        """)
+
+        )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ID.toString()))
+                .andExpect(jsonPath("$.stockQuantity").value(10));
+        verify(productService).restock(ID, 10);
+
+
     }
 
     @Test
-    void archive() {
+    void archiveReturnsTheInactiveProduct() throws Exception {
+
+        when(productService.archive(any())).thenReturn(cable2V(false));
+
+        mvc.perform(post("/api/products/{id}/archive", ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ID.toString()))
+                .andExpect(jsonPath("$.active").value(false));
+        verify(productService).archive(ID);
     }
 
     @Test
-    void reactivate() {
+    void reactivateReturnsTheActiveProduct() throws  Exception {
+        when(productService.reactivate(any())).thenReturn(cable2V(true));
+
+        mvc.perform(post("/api/products/{id}/reactivate", ID))
+                .andExpect(status().isOk())
+                .andExpect((jsonPath("$.id").value((ID.toString()))))
+                .andExpect(jsonPath("$.active").value(true));
+
+        verify(productService).reactivate(ID);
+
     }
 }
