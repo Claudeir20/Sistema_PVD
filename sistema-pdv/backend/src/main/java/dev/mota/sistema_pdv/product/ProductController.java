@@ -54,4 +54,10 @@ public class ProductController {
     public ProductResponse reactivate(@PathVariable UUID id) {
         return productService.reactivate(id);
     }
+
+    @GetMapping("/low-stock")
+    public List<ProductResponse> lowStock() {
+        return productService.findLowStock();
+    }
+
 }

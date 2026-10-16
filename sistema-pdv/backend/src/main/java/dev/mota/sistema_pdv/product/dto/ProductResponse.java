@@ -12,6 +12,7 @@ public record ProductResponse(
         int minStock,
         boolean active,
         Long version,
+        boolean belowMinStock,
         Instant createdAt,
         Instant updatedAt
 

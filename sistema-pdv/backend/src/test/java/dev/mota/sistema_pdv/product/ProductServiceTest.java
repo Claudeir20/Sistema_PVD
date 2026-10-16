@@ -10,6 +10,7 @@ import dev.mota.sistema_pdv.product.dto.UpdateProductRequest;
 import dev.mota.sistema_pdv.product.exception.ProductAlreadyExistsException;
 import dev.mota.sistema_pdv.product.exception.ProductNotFoundException;
 import dev.mota.sistema_pdv.shared.error.ConflictException;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,5 +116,28 @@ class ProductServiceTest {
         assertEquals(1, productRepository.findById(product.getId()).orElseThrow().getStockQuantity());
 
         assertThrows(IllegalArgumentException.class, () -> productService.decreaseStock(product.getId(), 2));
+    }
+
+    @Test
+    void findLowStockReturnsOnlyActiveProductsAtOrBelowMinimum() {
+        // 1. PREPARAR: um produto para cada situação
+        Product lowStock = Product.create("1000000028", "Carregador", 3990, 4);           // estoque 0, mínimo 4
+
+        Product wellStocked = Product.create("658711239", "Conector Tipo C", 1590, 5);
+        wellStocked.restock(10);                                                         // estoque 10, mínimo 5
+
+        Product archived = Product.create("228766239", "Capinha de Silicone", 1000, 5);  // estoque 0, mínimo 5
+        archived.archive();
+
+        productRepository.save(lowStock);
+        productRepository.save(wellStocked);
+        productRepository.save(archived);
+
+        // 2. EXECUTAR
+        List<ProductResponse> result = productService.findLowStock();
+
+        // 3. CONFERIR: só o Carregador (ativo e abaixo do mínimo)
+        List<String> names = result.stream().map(ProductResponse::name).toList();
+        assertEquals(List.of("Carregador"), names);
     }
 }
