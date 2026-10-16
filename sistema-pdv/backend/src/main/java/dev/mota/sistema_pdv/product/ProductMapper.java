@@ -17,6 +17,7 @@ public class ProductMapper {
                 product.getMinStock(),
                 product.isActive(),
                 product.getVersion(),
+                product.isBelowMinStock(),
                 product.getCreatedAt(),
                 product.getUpdatedAt());
     }

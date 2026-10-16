@@ -90,9 +90,18 @@ public class ProductService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductResponse> findLowStock() {
+
+        return productRepository.findActiveBelowMinStock().stream()
+                .map(productMapper::toResponse)
+                .toList();
+    }
 
     private Product findProduct(UUID productId) {
         return productRepository.findById(productId)
                 .orElseThrow(ProductNotFoundException::new);
     }
+
+
 }

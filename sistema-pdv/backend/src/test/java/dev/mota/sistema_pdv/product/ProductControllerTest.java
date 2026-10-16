@@ -32,15 +32,18 @@ class ProductControllerTest {
 
     private static final UUID ID = UUID.fromString("3f2a9c1e-0000-4000-8000-000000000001");
 
-    /** Resposta pronta para o service falso devolver. Mude o estoque conforme o teste. */
+
     private static ProductResponse cable(int stockQuantity) {
-        Instant now = Instant.parse("2026-10-14T12:00:00Z");
-        return new ProductResponse(ID, "7891000000011", "Cabo USB-C", 2990L, stockQuantity, 5, true, 0L, now, now);
+        return cable(stockQuantity, true);
     }
 
-    private static ProductResponse cable2V(boolean active) {
+    /** Único lugar que monta o ProductResponse dos testes. Estoque mínimo do cabo: 5. */
+    private static ProductResponse cable(int stockQuantity, boolean active) {
         Instant now = Instant.parse("2026-10-14T12:00:00Z");
-        return new ProductResponse(ID, "7891000000011",  "Cabo USB-C", 2990L,10 , 5, active, 0L, now, now  );
+        int minStock = 5;
+        boolean belowMinStock = stockQuantity <= minStock;
+        return new ProductResponse(ID, "7891000000011", "Cabo USB-C", 2990L, stockQuantity, minStock, active, 0L,
+                belowMinStock, now, now);
     }
 
     @Test
@@ -139,7 +142,7 @@ class ProductControllerTest {
     @Test
     void archiveReturnsTheInactiveProduct() throws Exception {
 
-        when(productService.archive(any())).thenReturn(cable2V(false));
+        when(productService.archive(any())).thenReturn(cable(10, false));
 
         mvc.perform(post("/api/products/{id}/archive", ID))
                 .andExpect(status().isOk())
@@ -150,7 +153,7 @@ class ProductControllerTest {
 
     @Test
     void reactivateReturnsTheActiveProduct() throws  Exception {
-        when(productService.reactivate(any())).thenReturn(cable2V(true));
+        when(productService.reactivate(any())).thenReturn(cable(10, true));
 
         mvc.perform(post("/api/products/{id}/reactivate", ID))
                 .andExpect(status().isOk())
@@ -159,5 +162,19 @@ class ProductControllerTest {
 
         verify(productService).reactivate(ID);
 
+    }
+
+    @Test
+    void findLowStockReturnsProductsBelowMinimum() throws Exception {
+        when(productService.findLowStock()).thenReturn(List.of(cable(0), cable(1)));
+
+        mvc.perform(get("/api/products/low-stock"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].stockQuantity").value(0))
+                .andExpect(jsonPath("$[0].belowMinStock").value(true))
+                .andExpect(jsonPath("$[1].belowMinStock").value(true));
+
+        verify(productService).findLowStock();
     }
 }
