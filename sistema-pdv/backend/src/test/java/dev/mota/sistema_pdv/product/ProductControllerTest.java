@@ -160,4 +160,24 @@ class ProductControllerTest {
         verify(productService).reactivate(ID);
 
     }
+<<<<<<< Updated upstream
+=======
+
+    @Test
+    void findLowStockReturnsProductsBelowMinimum() throws Exception {
+        when(productService.findLowStock()).thenReturn(List.of(cable(0), cable(1)));
+
+        mvc.perform(get("/api/products/low-stock"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].stockQuantity").value(0))
+                .andExpect(jsonPath("$[0].belowMinStock").value(true))
+                .andExpect(jsonPath("$[1].belowMinStock").value(true));
+
+        verify(productService).findLowStock();
+    }
+
+
+
+>>>>>>> Stashed changes
 }
