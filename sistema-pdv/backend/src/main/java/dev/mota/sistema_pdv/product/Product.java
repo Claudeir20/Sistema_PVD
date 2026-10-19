@@ -103,6 +103,14 @@ public class Product {
         this.stockQuantity -= quantity;
     }
 
+    public void adjustStock(int quantity) {
+        requireActive();
+        if (quantity < 0) {
+            throw new IllegalArgumentException("A quantidade contada não pode ser negativa.");
+        }
+        this.stockQuantity = quantity;
+    }
+
 
     public boolean isBelowMinStock() {
         return stockQuantity <= minStock;

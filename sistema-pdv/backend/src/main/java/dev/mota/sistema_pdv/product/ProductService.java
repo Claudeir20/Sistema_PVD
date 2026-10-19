@@ -1,8 +1,10 @@
 package dev.mota.sistema_pdv.product;
 
-import dev.mota.sistema_pdv.product.dto.CreateProductRequest;
-import dev.mota.sistema_pdv.product.dto.ProductResponse;
-import dev.mota.sistema_pdv.product.dto.UpdateProductRequest;
+import dev.mota.sistema_pdv.movements.ProductMovementItemsMapper;
+import dev.mota.sistema_pdv.movements.StockMovement;
+import dev.mota.sistema_pdv.movements.StockMovementRepository;
+import dev.mota.sistema_pdv.movements.StockMovementType;
+import dev.mota.sistema_pdv.product.dto.*;
 import dev.mota.sistema_pdv.product.exception.ProductAlreadyExistsException;
 import dev.mota.sistema_pdv.product.exception.ProductNotFoundException;
 import dev.mota.sistema_pdv.shared.error.ConflictException;
@@ -19,15 +21,13 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final StockMovementRepository stockMovementRepository;
+    private final ProductMovementItemsMapper productMovementItemsMapper;
 
     @Transactional
     public ProductResponse create(CreateProductRequest request) {
 
-        Product product = Product.create(
-                request.barcode(),
-                request.name(),
-                request.priceInCents(),
-                request.minStock());
+        Product product = Product.create(request.barcode(), request.name(), request.priceInCents(), request.minStock());
 
         if (productRepository.existsByBarcode(product.getBarcode())) {
             throw new ProductAlreadyExistsException(product.getBarcode());
@@ -41,8 +41,7 @@ public class ProductService {
         Product product = findProduct(productId);
 
         if (!product.getVersion().equals(request.version())) {
-            throw new ConflictException(
-                    "Este produto foi alterado por outra pessoa. Atualize a página e tente novamente.");
+            throw new ConflictException("Este produto foi alterado por outra pessoa. Atualize a página e tente novamente.");
         }
 
         product.updateDetails(request.name(), request.priceInCents(), request.minStock());
@@ -61,7 +60,11 @@ public class ProductService {
     @Transactional
     public ProductResponse restock(UUID productId, int quantity) {
         Product product = findProduct(productId);
-        product.restock(quantity);
+
+        StockMovement stockMovement = StockMovement.create(StockMovementType.ENTRY, null);
+
+        stockMovement.addProduct(product, quantity);
+        stockMovementRepository.save(stockMovement);
         return productMapper.toResponse(productRepository.saveAndFlush(product));
     }
 
@@ -75,7 +78,13 @@ public class ProductService {
     @Transactional
     public void decreaseStock(UUID productId, int quantity) {
         Product product = findProduct(productId);
-        product.decreaseStock(quantity);
+
+        StockMovement stockMovement = StockMovement.create(StockMovementType.EXIT, null);
+
+        stockMovement.addProduct(product, quantity);
+        stockMovementRepository.save(stockMovement);
+
+
     }
 
     @Transactional(readOnly = true)
@@ -85,7 +94,8 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductResponse> findAllActive() {
-        return productRepository.findAllByActiveTrueOrderByNameAsc().stream()
+        return productRepository.findAllByActiveTrueOrderByNameAsc()
+                .stream()
                 .map(productMapper::toResponse)
                 .toList();
     }
@@ -93,15 +103,35 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponse> findLowStock() {
 
-        return productRepository.findActiveBelowMinStock().stream()
+        return productRepository.findActiveBelowMinStock()
+                .stream()
                 .map(productMapper::toResponse)
                 .toList();
     }
 
-    private Product findProduct(UUID productId) {
-        return productRepository.findById(productId)
-                .orElseThrow(ProductNotFoundException::new);
+    @Transactional
+    public ProductResponse adjustStock(AdjustStockRequest request, UUID productId) {
+        Product product = findProduct(productId);
+
+        StockMovement stockMovement = StockMovement.create(
+                StockMovementType.ADJUSTMENT,
+                request.reason());
+        stockMovement.addCountedProduct(product, request.countedQuantity());
+
+        stockMovementRepository.save(stockMovement);
+        return productMapper.toResponse(productRepository.saveAndFlush(product));
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductMovementResponse> findMovementOfProduct(UUID productId) {
+        findProduct(productId);
 
+        return productRepository.findHistoryOfProduct(productId).stream()
+                .map(productMovementItemsMapper::toResponse)
+                .toList();
+    }
+
+    private Product findProduct(UUID productId) {
+        return productRepository.findById(productId).orElseThrow(ProductNotFoundException::new);
+    }
 }

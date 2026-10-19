@@ -1,9 +1,6 @@
 package dev.mota.sistema_pdv.product;
 
-import dev.mota.sistema_pdv.product.dto.CreateProductRequest;
-import dev.mota.sistema_pdv.product.dto.ProductResponse;
-import dev.mota.sistema_pdv.product.dto.RestockProductRequest;
-import dev.mota.sistema_pdv.product.dto.UpdateProductRequest;
+import dev.mota.sistema_pdv.product.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -60,4 +57,13 @@ public class ProductController {
         return productService.findLowStock();
     }
 
+    @PostMapping("/{id}/adjust")
+    public ProductResponse adjustStock(@Valid @RequestBody AdjustStockRequest request, @PathVariable UUID id) {
+        return productService.adjustStock(request, id);
+    }
+
+    @GetMapping("/{id}/movements")
+    public List<ProductMovementResponse> movements(@PathVariable UUID id) {
+        return productService.findMovementOfProduct(id);
+    }
 }
