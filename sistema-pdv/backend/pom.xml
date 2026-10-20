@@ -43,6 +43,12 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<!-- Segurança: login com sessão, perfis de acesso, senhas com BCrypt e proteção CSRF. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
 		<!-- Migrações do banco: as tabelas são criadas e evoluídas por scripts em db/migration. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -93,6 +99,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Permite simular um usuário logado nos testes (@WithMockUser, csrf()). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
