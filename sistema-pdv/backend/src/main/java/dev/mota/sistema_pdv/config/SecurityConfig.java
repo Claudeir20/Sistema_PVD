@@ -25,6 +25,7 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "CAIXA", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/api/products/*/restock").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers("/api/products/**").hasRole("ADMIN")
@@ -33,10 +34,14 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
 
                 )
+                .csrf(csrf -> csrf.spa())
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(
-                                (request, response, e) -> writeError(response, 401, "Faça login para continuar.")))
+                                (request, response, e) -> writeError(response, 401, "Faça login para continuar."))
+
+                        .accessDeniedHandler((request, response, e) -> writeError(response, 403,
+                                "Você não tem permissão para acessar este recurso.")))
 
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")

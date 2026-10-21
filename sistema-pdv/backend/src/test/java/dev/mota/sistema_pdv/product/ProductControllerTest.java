@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,10 +19,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(ProductController.class)
+@WithMockUser(roles = "ADMIN")
 class ProductControllerTest {
 
     @Autowired
@@ -52,7 +55,7 @@ class ProductControllerTest {
         when(productService.create(any())).thenReturn(cable(0));
 
         // 2. REQUISITAR: o POST que o frontend faria
-        mvc.perform(post("/api/products")
+        mvc.perform(post("/api/products").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"barcode": "7891000000011", "name": "Cabo USB-C", "priceInCents": 2990, "minStock": 5}
@@ -103,7 +106,7 @@ class ProductControllerTest {
         when(productService.update(any(), any())).thenReturn(cable(0));
 
 
-        mvc.perform(put("/api/products/{id}", ID)
+        mvc.perform(put("/api/products/{id}", ID).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "Cabo USB-C 2 m", "priceInCents": 1990, "minStock": 8, "version": 0}
@@ -122,7 +125,7 @@ class ProductControllerTest {
 
         when(productService.restock(any(), anyInt())).thenReturn(cable(10));
 
-        mvc.perform(post("/api/products/{id}/restock", ID)
+        mvc.perform(post("/api/products/{id}/restock", ID).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         
@@ -144,7 +147,7 @@ class ProductControllerTest {
 
         when(productService.archive(any())).thenReturn(cable(10, false));
 
-        mvc.perform(post("/api/products/{id}/archive", ID))
+        mvc.perform(post("/api/products/{id}/archive", ID).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(ID.toString()))
                 .andExpect(jsonPath("$.active").value(false));
@@ -155,7 +158,7 @@ class ProductControllerTest {
     void reactivateReturnsTheActiveProduct() throws  Exception {
         when(productService.reactivate(any())).thenReturn(cable(10, true));
 
-        mvc.perform(post("/api/products/{id}/reactivate", ID))
+        mvc.perform(post("/api/products/{id}/reactivate", ID).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect((jsonPath("$.id").value((ID.toString()))))
                 .andExpect(jsonPath("$.active").value(true));

@@ -13,6 +13,7 @@ import dev.mota.sistema_pdv.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 /** Ponte entre a tabela users e o Spring Security: o login é o e-mail. */
+
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {

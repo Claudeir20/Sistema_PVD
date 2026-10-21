@@ -23,7 +23,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service com banco H2 de verdade. @Transactional desfaz o que cada teste gravou.
+ * Service com banco H2 de verdade. @Transactional desfaz o que cada teste
+ * gravou.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -53,7 +54,8 @@ class ProductServiceTest {
     void rejectsDuplicateBarcodeEvenWithSpaces() {
         createCable();
 
-        ProductAlreadyExistsException error = assertThrows(ProductAlreadyExistsException.class, () -> productService.create(new CreateProductRequest(" 7891000000011 ", "Outro", 1000L, 1)));
+        ProductAlreadyExistsException error = assertThrows(ProductAlreadyExistsException.class,
+                () -> productService.create(new CreateProductRequest(" 7891000000011 ", "Outro", 1000L, 1)));
         assertEquals("Já existe um produto com o código de barras 7891000000011.", error.getMessage());
     }
 
@@ -61,7 +63,8 @@ class ProductServiceTest {
     void updateReturnsTheNewVersion() {
         ProductResponse created = createCable();
 
-        ProductResponse updated = productService.update(created.id(), new UpdateProductRequest("Cabo USB-C 2 m", 3490L, 8, created.version()));
+        ProductResponse updated = productService.update(created.id(),
+                new UpdateProductRequest("Cabo USB-C 2 m", 3490L, 8, created.version()));
 
         assertEquals("Cabo USB-C 2 m", updated.name());
         assertEquals(3490, updated.priceInCents());
@@ -73,7 +76,8 @@ class ProductServiceTest {
         ProductResponse created = createCable();
         productService.update(created.id(), new UpdateProductRequest("Nome do Bruno", 3490L, 8, 0L));
 
-        assertThrows(ConflictException.class, () -> productService.update(created.id(), new UpdateProductRequest("Nome da Ana", 1990L, 2, 0L)));
+        assertThrows(ConflictException.class,
+                () -> productService.update(created.id(), new UpdateProductRequest("Nome da Ana", 1990L, 2, 0L)));
 
         assertEquals("Nome do Bruno", productRepository.findById(created.id()).orElseThrow().getName());
     }
@@ -82,7 +86,8 @@ class ProductServiceTest {
     void unknownProductIsNotFound() {
         UUID missingId = UUID.randomUUID();
 
-        assertThrows(ProductNotFoundException.class, () -> productService.update(missingId, new UpdateProductRequest("Cabo", 2990L, 5, 0L)));
+        assertThrows(ProductNotFoundException.class,
+                () -> productService.update(missingId, new UpdateProductRequest("Cabo", 2990L, 5, 0L)));
         assertThrows(ProductNotFoundException.class, () -> productService.archive(missingId));
     }
 
@@ -123,12 +128,12 @@ class ProductServiceTest {
     @Test
     void findLowStockReturnsOnlyActiveProductsAtOrBelowMinimum() {
         // 1. PREPARAR: um produto para cada situação
-        Product lowStock = Product.create("1000000028", "Carregador", 3990, 4);           // estoque 0, mínimo 4
+        Product lowStock = Product.create("1000000028", "Carregador", 3990, 4); // estoque 0, mínimo 4
 
         Product wellStocked = Product.create("658711239", "Conector Tipo C", 1590, 5);
-        wellStocked.restock(10);                                                         // estoque 10, mínimo 5
+        wellStocked.restock(10); // estoque 10, mínimo 5
 
-        Product archived = Product.create("228766239", "Capinha de Silicone", 1000, 5);  // estoque 0, mínimo 5
+        Product archived = Product.create("228766239", "Capinha de Silicone", 1000, 5); // estoque 0, mínimo 5
         archived.archive();
 
         productRepository.save(lowStock);
@@ -160,9 +165,7 @@ class ProductServiceTest {
         assertEquals(10, result.get(1).quantity());
         assertEquals(10, result.get(1).balanceAfter());
 
-
     }
-
 
     @Test
     void historyOfUnknownProductIsNotFound() {
