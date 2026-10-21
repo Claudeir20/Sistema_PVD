@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom"
+import UserMenu from "../features/auth/UserMenu"
 
 const navigation = [
   { label: "Painel", to: "/painel" },
@@ -45,6 +46,10 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
+
+        <div className="border-t border-neutral-200 px-5 py-4">
+          <UserMenu />
+        </div>
       </aside>
       <Outlet />
     </div>

@@ -1,12 +1,19 @@
 import { NavLink, Outlet } from "react-router-dom"
+import { useAuth } from "../features/auth/AuthContext"
+import UserMenu from "../features/auth/UserMenu"
 
 const navigation = [
   { label: "Vender", to: "/vender" },
   { label: "Ordens de serviço", to: "/os/1" },
-  { label: "Painel", to: "/painel" },
+  { label: "Painel", to: "/painel", adminOnly: true },
 ]
 
 export default function OperationLayout() {
+  const { user } = useAuth()
+  const visibleNavigation = navigation.filter(
+    (item) => !item.adminOnly || user?.role === "ADMIN",
+  )
+
   return (
     <div className="min-h-dvh w-full max-w-full overflow-x-hidden bg-[#f4f4f2]">
       <header className="no-print border-b border-[#d8d7d2] bg-white px-5 py-4">
@@ -17,9 +24,7 @@ export default function OperationLayout() {
             </div>
             <div>
               <p className="font-bold text-neutral-900">Oficina Central</p>
-              <p className="text-xs text-neutral-500">
-                Caixa 01 · Operador: Marina
-              </p>
+              <p className="text-xs text-neutral-500">Ponto de venda</p>
             </div>
           </div>
 
@@ -27,7 +32,7 @@ export default function OperationLayout() {
             aria-label="Navegação operacional"
             className="flex flex-wrap gap-2"
           >
-            {navigation.map((item) => (
+            {visibleNavigation.map((item) => (
               <NavLink
                 className={({ isActive }) =>
                   `inline-flex min-h-10 items-center rounded-lg border px-4 text-sm font-medium transition-colors ${
@@ -43,6 +48,8 @@ export default function OperationLayout() {
               </NavLink>
             ))}
           </nav>
+
+          <UserMenu />
         </div>
       </header>
       <Outlet />

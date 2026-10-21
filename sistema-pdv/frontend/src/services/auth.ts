@@ -30,3 +30,9 @@ export function fetchCurrentUser() {
 export function logout() {
   return apiFetch<void>("/api/auth/logout", { method: "POST" })
 }
+
+export const roleLabels: Record<Role, string> = {
+  ADMIN: "Administrador",
+  CAIXA: "Caixa",
+  TECNICO: "Técnico",
+}

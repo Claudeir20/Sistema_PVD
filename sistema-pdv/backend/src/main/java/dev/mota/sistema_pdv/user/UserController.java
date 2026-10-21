@@ -1,6 +1,5 @@
 package dev.mota.sistema_pdv.user;
 
-import java.net.Authenticator;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
