@@ -9,14 +9,14 @@ RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm exec tsc --noEmit && pnpm test && pnpm build
 
-FROM maven:3.9-eclipse-temurin-21 AS backend
+FROM maven:3.9-eclipse-temurin-25 AS backend
 WORKDIR /app
 COPY backend/ ./backend/
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 WORKDIR /app/backend
 RUN mvn -B clean package -Pwith-frontend
 
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 WORKDIR /app
 RUN groupadd --system app && useradd --system --gid app app
 COPY --from=backend --chown=app:app /app/backend/target/sistema-pdv-0.0.1-SNAPSHOT.jar ./app.jar

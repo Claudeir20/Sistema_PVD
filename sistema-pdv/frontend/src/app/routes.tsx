@@ -1,4 +1,6 @@
 import { Navigate, createBrowserRouter } from "react-router-dom"
+import LoginPage from "../features/auth/LoginPage"
+import RequireAuth from "../features/auth/RequireAuth"
 import CustomerTrackingPage from "../features/customer-portal/pages/CustomerTrackingPage"
 import DashboardPage from "../features/dashboard/DashboardPage"
 import PosPage from "../features/pos/PosPage"
@@ -10,7 +12,11 @@ import PublicLayout from "./PublicLayout"
 
 export const router = createBrowserRouter([
   {
-    element: <AdminLayout />,
+    element: (
+      <RequireAuth roles={["ADMIN"]}>
+        <AdminLayout />
+      </RequireAuth>
+    ),
     children: [
       {
         path: "/painel",
@@ -19,7 +25,11 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    element: <OperationLayout />,
+    element: (
+      <RequireAuth>
+        <OperationLayout />
+      </RequireAuth>
+    ),
     children: [
       {
         path: "/vender",
@@ -39,6 +49,10 @@ export const router = createBrowserRouter([
         element: <CustomerTrackingPage />,
       },
     ],
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
   },
   {
     path: "/",

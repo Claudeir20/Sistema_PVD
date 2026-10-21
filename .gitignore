@@ -1,3 +1,4 @@
 # Configurações locais do IntelliJ (cada pessoa tem as suas)
 .idea/
 *.iml
+.vscode/
