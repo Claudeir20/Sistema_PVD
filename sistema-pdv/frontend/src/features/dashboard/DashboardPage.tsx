@@ -3,6 +3,7 @@ import { useMemo, useState } from "react"
 import MetricCard from "../../components/ui/MetricCard"
 import PageHeader from "../../components/ui/PageHeader"
 import { formatMoney } from "../../domain/formatters"
+import { useAuth } from "../auth/AuthContext"
 import { accountsPayable } from "../../services/accountsPayable"
 import { products } from "../../services/products"
 import { exampleSales, sales } from "../../services/sales"
@@ -22,6 +23,9 @@ import useDashboardUpdates from "./hooks/useDashboardUpdates"
 
 export default function DashboardPage() {
   useDashboardUpdates()
+  const { user } = useAuth()
+  // Só o primeiro nome: "Bom dia, Maria", não "Bom dia, Maria da Silva".
+  const firstName = user?.name.split(" ")[0] ?? ""
   const [period, setPeriod] = useState<DashboardPeriod>("TODAY")
   const now = useMemo(() => new Date(), [])
   const allSales = [...exampleSales, ...sales]
@@ -39,7 +43,7 @@ export default function DashboardPage() {
         <PageHeader
           actions={<PeriodFilter onChange={setPeriod} value={period} />}
           description="Acompanhe as vendas, ordens de serviço e compromissos da loja."
-          title={`${getGreeting(now.getHours())}, Marina`}
+          title={`${getGreeting(now.getHours())}, ${firstName}`}
         />
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
