@@ -17,13 +17,13 @@ public class FirstAdminInitializer implements ApplicationRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.admin.email: ")
+    @Value("${app.admin.email:}")
     private String email;
 
-    @Value("${app.admin.password: ")
+    @Value("${app.admin.password:}")
     private String password;
 
-    @Value("${app.admin.name:Administrador")
+    @Value("${app.admin.name:Administrador}")
     private String name;
 
     @Override

@@ -43,6 +43,10 @@ react(),
           '**/.figma/**',
 ],
       },
+      proxy: {
+        // Em dev, o navegador fala só com o Vite; ele repassa a API para o Spring.
+        '/api': 'http://localhost:8080',
+      },
     },
     preview: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',

@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "CAIXA", "TECNICO")
                         .requestMatchers(HttpMethod.POST, "/api/products/*/restock").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers("/api/products/**").hasRole("ADMIN")

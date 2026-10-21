@@ -49,7 +49,7 @@ public class UserController {
         return userService.changeRole(id, request.role());
     }
 
-    @PostMapping("/id}/deactivate")
+    @PostMapping("/{id}/deactivate")
     public UserResponse deactivate(@PathVariable UUID id, Authentication authentication) {
         return userService.deactivate(id, authentication.getName());
     }
