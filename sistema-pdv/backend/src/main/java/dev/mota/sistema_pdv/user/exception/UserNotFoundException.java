@@ -1,5 +1,7 @@
 package dev.mota.sistema_pdv.user.exception;
 
+import java.util.UUID;
+
 import dev.mota.sistema_pdv.shared.error.NotFoundException;
 
 public class UserNotFoundException extends NotFoundException {
