@@ -7,6 +7,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -14,11 +15,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * Converte as exceções em respostas {"message": "..."} em português.
  * <ul>
- *   <li>400 – IllegalArgumentException e validação: dados inválidos ou regra de negócio violada
- *       (ex.: estoque insuficiente).</li>
- *   <li>404 – NotFoundException: o registro indicado na URL não existe.</li>
- *   <li>409 – ConflictException e conflitos do banco: duplicado, alterado por outra operação,
- *       possui histórico, já arquivado.</li>
+ * <li>400 – IllegalArgumentException e validação: dados inválidos ou regra de
+ * negócio violada
+ * (ex.: estoque insuficiente).</li>
+ * <li>404 – NotFoundException: o registro indicado na URL não existe.</li>
+ * <li>409 – ConflictException e conflitos do banco: duplicado, alterado por
+ * outra operação,
+ * possui histórico, já arquivado.</li>
  * </ul>
  */
 @RestControllerAdvice
@@ -56,10 +59,15 @@ public class ApiExceptionHandler {
         return error(HttpStatus.CONFLICT, ex.getMessage());
     }
 
-    @ExceptionHandler({DataIntegrityViolationException.class, OptimisticLockingFailureException.class})
+    @ExceptionHandler({ DataIntegrityViolationException.class, OptimisticLockingFailureException.class })
     public ResponseEntity<ErrorResponse> concurrentChange() {
         return error(HttpStatus.CONFLICT,
                 "Registro duplicado ou alterado por outra operação. Atualize os dados e tente novamente.");
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> invalidCredentials(){
+        return error(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
     }
 
     private static ResponseEntity<ErrorResponse> error(HttpStatus status, String message) {

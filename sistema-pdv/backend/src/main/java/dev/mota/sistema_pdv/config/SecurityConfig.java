@@ -12,15 +12,15 @@ import org.springframework.context.annotation.Bean;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@Configuration 
+@Configuration
 public class SecurityConfig {
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean 
+    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
@@ -31,18 +31,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
-                    
-                    )
 
-                    .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, e) ->
-                                    writeError(response, 401, "Faça login para continuar.")))
+                )
 
-                    .logout(logout -> logout
-                    .logoutUrl("/api/auth/logout")
-                    .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(
+                                (request, response, e) -> writeError(response, 401, "Faça login para continuar.")))
 
-                .build();             
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)))
+
+                .build();
     }
 
     private static void writeError(HttpServletResponse response, int status, String message) throws IOException {
@@ -50,12 +50,11 @@ public class SecurityConfig {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write("{\"message\":\"" + message + "\"}");
-}
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    
 }

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import dev.mota.sistema_pdv.user.dto.CreateUserRequest;
 import dev.mota.sistema_pdv.user.dto.UserResponse;
 import dev.mota.sistema_pdv.user.exception.EmailAlreadyExistsException;
+import dev.mota.sistema_pdv.user.exception.UserNotFoundException;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +23,8 @@ public class UserService {
 
     @Transactional
     public UserResponse create(CreateUserRequest request) {
-        // A entidade valida e normaliza o e-mail; a checagem de duplicado usa o valor já limpo.
+        // A entidade valida e normaliza o e-mail; a checagem de duplicado usa o valor
+        // já limpo.
         User user = User.createUser(
                 request.name(),
                 request.role(),
@@ -36,12 +38,20 @@ public class UserService {
         try {
             return userMapper.toResponse(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
-            // Dois cadastros com o mesmo e-mail ao mesmo tempo: o UNIQUE do banco barra o segundo.
+            // Dois cadastros com o mesmo e-mail ao mesmo tempo: o UNIQUE do banco barra o
+            // segundo.
             if (isEmailUniqueViolation(e)) {
                 throw new EmailAlreadyExistsException(user.getEmail());
             }
             throw e;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponse findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(userMapper::toResponse)
+                .orElseThrow(() -> new UserNotFoundException());
     }
 
     private boolean isEmailUniqueViolation(DataIntegrityViolationException exception) {
