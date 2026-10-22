@@ -101,10 +101,7 @@ public class StockMovement {
         items.add(MovementItems.create(this, product, difference, product.getStockQuantity()));
     }
 
-
-
     public List<MovementItems> getItems() {
         return Collections.unmodifiableList(items);
     }
-
 }

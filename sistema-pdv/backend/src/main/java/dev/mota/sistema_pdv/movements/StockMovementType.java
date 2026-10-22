@@ -2,7 +2,7 @@ package dev.mota.sistema_pdv.movements;
 
 public enum StockMovementType {
 
-    /** Entrada de mercadoria (reposição ou devolução por cancelamento de venda). */
+    /** Entrada de mercadoria (reposição). */
     ENTRY,
     /** Saída manual (perda, uso interno). */
     EXIT,
@@ -10,6 +10,6 @@ public enum StockMovementType {
     ADJUSTMENT,
     /** Saída por venda no PDV. */
     SALE,
-    /** Venda cancelada */
+    /** Devolução ao estoque pelo cancelamento de uma venda; vale mesmo para produto arquivado. */
     SALE_CANCELLATION
 }

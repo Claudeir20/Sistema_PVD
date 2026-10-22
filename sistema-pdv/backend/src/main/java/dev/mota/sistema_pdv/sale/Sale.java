@@ -25,6 +25,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 
 /**
@@ -78,20 +79,28 @@ public class Sale {
     @JoinColumn(name = "seller_id", nullable = false, updatable = false)
     private User seller;
 
-    /** Saída de estoque desta venda. */
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    /** Saída de estoque desta venda. Salva junto com a venda (cascade). */
+    @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "stock_movement_id", nullable = false, unique = true, updatable = false)
     private StockMovement stockMovement;
 
     /**
-     * Entrada que devolveu os itens ao estoque; só existe se a venda foi cancelada.
+     * Devolução dos itens ao estoque; só existe se a venda foi cancelada.
+     * Salva junto com a venda (cascade).
      */
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "cancellation_movement_id", unique = true)
     private StockMovement cancellationMovement;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
+
+    /**
+     * Protege contra duas pessoas cancelando a mesma venda ao mesmo tempo. Também faz o
+     * save() reconhecer a venda nova (version ainda nula) e usar persist em vez de merge.
+     */
+    @Version
+    private Long version;
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SaleItem> items = new ArrayList<>();
@@ -163,8 +172,8 @@ public class Sale {
 
     /**
      * Cancela a venda inteira: todos os itens voltam ao estoque por uma
-     * movimentação de entrada,
-     * que fica registrada junto da venda.
+     * movimentação de cancelamento, que fica registrada junto da venda.
+     * Vale mesmo se o produto já foi arquivado.
      */
     public void cancel(StockMovement cancellationMovement) {
         requireNotCanceled();
@@ -177,6 +186,18 @@ public class Sale {
         }
         this.cancellationMovement = cancellationMovement;
         this.status = SaleStatus.CANCELED;
+    }
+
+    /** O service chama antes de salvar: não existe venda sem itens. */
+    public void requireItems() {
+        if (items.isEmpty()) {
+            throw new IllegalArgumentException("A venda precisa ter pelo menos um item.");
+        }
+    }
+
+    /** V-0042: o número como aparece para o cliente e no caixa. */
+    public String getFormattedNumber() {
+        return "V-%04d".formatted(number);
     }
 
     public boolean isCanceled() {
