@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { formatDate, formatMoney, formatPhone } from "./formatters"
+import {
+  centsToInput,
+  formatDate,
+  formatMoney,
+  formatPhone,
+  parseMoneyToCents,
+} from "./formatters"
 
 describe("formatMoney", () => {
   it("formats integer cents as Brazilian reais", () => {
@@ -30,5 +36,32 @@ describe("formatPhone", () => {
 
   it("keeps unsupported values unchanged", () => {
     expect(formatPhone("1234")).toBe("1234")
+  })
+})
+
+describe("parseMoneyToCents", () => {
+  it("reads comma and dot decimals the same way", () => {
+    expect(parseMoneyToCents("29,90")).toBe(2990)
+    expect(parseMoneyToCents("29.90")).toBe(2990)
+    expect(parseMoneyToCents("4.8")).toBe(480)
+  })
+
+  it("treats dots as thousands when there is a comma or no decimal part", () => {
+    expect(parseMoneyToCents("1.234,56")).toBe(123456)
+    expect(parseMoneyToCents("1.234")).toBe(123400)
+    expect(parseMoneyToCents("R$ 89,90")).toBe(8990)
+    expect(parseMoneyToCents("29")).toBe(2900)
+  })
+
+  it("rejects text that is not a value", () => {
+    expect(parseMoneyToCents("")).toBeNull()
+    expect(parseMoneyToCents("abc")).toBeNull()
+    expect(parseMoneyToCents("-5")).toBeNull()
+    expect(parseMoneyToCents("1,234,5")).toBeNull()
+  })
+
+  it("round-trips with centsToInput (reopening the discount dialog)", () => {
+    expect(centsToInput(480)).toBe("4,80")
+    expect(parseMoneyToCents(centsToInput(480))).toBe(480)
   })
 })

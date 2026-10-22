@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react"
 import Button from "../../../components/ui/Button"
 import Dialog from "../../../components/ui/Dialog"
-import { formatMoney } from "../../../domain/formatters"
+import {
+  centsToInput,
+  formatMoney,
+  parseMoneyToCents,
+} from "../../../domain/formatters"
 
 interface DiscountDialogProps {
   currentDiscountInCents: number
@@ -9,12 +13,6 @@ interface DiscountDialogProps {
   subtotalInCents: number
   onApply: (discountInCents: number) => void
   onClose: () => void
-}
-
-function parseReais(value: string) {
-  const normalized = value.replace(/\./g, "").replace(",", ".")
-  const parsed = Number(normalized)
-  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed * 100)) : 0
 }
 
 export default function DiscountDialog({
@@ -27,7 +25,7 @@ export default function DiscountDialog({
   const [value, setValue] = useState("")
 
   useEffect(() => {
-    if (open) setValue((currentDiscountInCents / 100).toFixed(2))
+    if (open) setValue(centsToInput(currentDiscountInCents))
   }, [currentDiscountInCents, open])
 
   return (
@@ -53,7 +51,10 @@ export default function DiscountDialog({
       </label>
       <div className="mt-5 grid grid-cols-2 gap-2">
         <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={() => onApply(parseReais(value))} variant="primary">
+        <Button
+          onClick={() => onApply(parseMoneyToCents(value) ?? 0)}
+          variant="primary"
+        >
           Aplicar
         </Button>
       </div>
