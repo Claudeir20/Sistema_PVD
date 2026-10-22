@@ -4,6 +4,7 @@ import UserMenu from "../features/auth/UserMenu"
 const navigation = [
   { label: "Painel", to: "/painel" },
   { label: "Vender (PDV)", to: "/vender" },
+  { label: "Vendas", to: "/vendas" },
   { label: "Produtos", to: "/produtos" },
   { label: "Ordens de serviço", to: "/os/1" },
   { label: "Estoque", to: "/estoque" },

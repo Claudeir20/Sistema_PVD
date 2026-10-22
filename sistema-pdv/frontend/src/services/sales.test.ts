@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { Product } from "../domain/types"
 import { resetProductsForTests } from "./products"
 import {
+  cancelSale,
   fetchSalesByPeriod,
   registerSale,
   subscribeSales,
@@ -239,5 +240,39 @@ describe("fetchSalesByPeriod", () => {
         totals: { totalInCents: 2990 },
       },
     ])
+  })
+})
+
+describe("cancelSale", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("cancels, reloads the stock and tells the dashboard", async () => {
+    const fetchMock = vi.fn((path: string, _init?: RequestInit) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify(
+            path.endsWith("/cancel")
+              ? { ...createdSale, status: "CANCELED" }
+              : [],
+          ),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+    vi.stubGlobal("document", { cookie: "XSRF-TOKEN=token-de-teste" })
+    const listener = vi.fn()
+    const unsubscribe = subscribeSales(listener)
+
+    const canceled = await cancelSale(createdSale.id)
+
+    expect(canceled.status).toBe("CANCELED")
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `/api/sales/${createdSale.id}/cancel`,
+    )
+    expect(fetchMock.mock.calls[0][1]?.method).toBe("POST")
+    expect(fetchMock).toHaveBeenCalledWith("/api/products", expect.anything())
+    expect(listener).toHaveBeenCalledOnce()
+    unsubscribe()
   })
 })
