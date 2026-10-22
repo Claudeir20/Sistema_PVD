@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isValidCpf, normalizeCpf } from "./customerCpf"
+import { formatCpf, isValidCpf, normalizeCpf } from "./customerCpf"
 
 describe("CPF validation", () => {
   it("normalizes punctuation", () => {
@@ -12,6 +12,10 @@ describe("CPF validation", () => {
 
   it("rejects invalid check digits", () => {
     expect(isValidCpf("529.982.247-24")).toBe(false)
+  })
+
+  it("formats the digits for display", () => {
+    expect(formatCpf("52998224725")).toBe("529.982.247-25")
   })
 
   it("rejects repeated digits", () => {

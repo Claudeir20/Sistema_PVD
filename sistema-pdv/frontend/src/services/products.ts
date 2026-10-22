@@ -112,22 +112,6 @@ export async function restockProduct(productId: string, quantity: number) {
   return updated
 }
 
-/**
- * Baixa o estoque só em memória, para a tela refletir a venda simulada.
- * TODO (Parte 2): sai quando a venda chamar POST /api/sales; aí é só recarregar os produtos.
- */
-export function decreaseProductStock(productId: string, quantity: number) {
-  const product = products.find((candidate) => candidate.id === productId)
-
-  if (!product || quantity <= 0 || quantity > product.stock) {
-    throw new Error("Não foi possível baixar o estoque do produto.")
-  }
-
-  product.stock -= quantity
-  emitProductsChanged()
-  return product
-}
-
 export function resetProductsForTests(initialProducts: Product[] = []) {
   products.splice(
     0,

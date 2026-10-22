@@ -8,6 +8,7 @@ import OrderSummary from "./components/OrderSummary"
 import PaymentMethods from "./components/PaymentMethods"
 import ProductSearch from "./components/ProductSearch"
 import ShortcutBar from "./components/ShortcutBar"
+import { formatCpf } from "./customerCpf"
 import usePosSale from "./hooks/usePosSale"
 
 if (import.meta.hot) {
@@ -60,11 +61,9 @@ export default function PosPage() {
           </p>
           {sale.customer ? (
             <div className="mt-3">
-              <p className="font-semibold text-neutral-900">
-                {sale.customer.name || "Cliente identificado"}
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">
-                CPF {sale.customer.cpf}
+              <p className="text-sm text-neutral-500">CPF na nota</p>
+              <p className="mt-1 font-mono font-semibold text-neutral-900">
+                {formatCpf(sale.customer.cpf)}
               </p>
               <Button
                 className="mt-3 min-h-9 px-3"

@@ -17,14 +17,12 @@ export default function CustomerDialog({
   onClose,
   onSave,
 }: CustomerDialogProps) {
-  const [name, setName] = useState("")
   const [cpf, setCpf] = useState("")
   const [attemptedSave, setAttemptedSave] = useState(false)
   const cpfIsValid = isValidCpf(cpf)
 
   useEffect(() => {
     if (!open) return
-    setName(customer?.name ?? "")
     setCpf(customer?.cpf ?? "")
     setAttemptedSave(false)
   }, [customer, open])
@@ -56,17 +54,6 @@ export default function CustomerDialog({
           </span>
         ) : null}
       </label>
-      <label className="mt-3 block">
-        <span className="mb-1.5 block text-sm font-medium text-neutral-700">
-          Nome (opcional)
-        </span>
-        <input
-          className="h-11 w-full rounded-lg border border-neutral-300 px-3 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Nome do cliente"
-          value={name}
-        />
-      </label>
       <div className="mt-5 grid grid-cols-2 gap-2">
         <Button onClick={onClose}>Cancelar</Button>
         <Button
@@ -75,10 +62,7 @@ export default function CustomerDialog({
             setAttemptedSave(true)
             if (!cpfIsValid) return
 
-            onSave({
-              cpf: normalizeCpf(cpf),
-              name: name.trim(),
-            })
+            onSave({ cpf: normalizeCpf(cpf) })
           }}
           variant="primary"
         >
