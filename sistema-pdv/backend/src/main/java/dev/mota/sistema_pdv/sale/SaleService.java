@@ -8,10 +8,16 @@ import dev.mota.sistema_pdv.product.exception.ProductNotFoundException;
 import dev.mota.sistema_pdv.sale.dto.CreateSaleRequest;
 import dev.mota.sistema_pdv.sale.dto.SaleItemRequest;
 import dev.mota.sistema_pdv.sale.dto.response.SaleResponse;
+import dev.mota.sistema_pdv.sale.dto.response.SaleSummaryResponse;
 import dev.mota.sistema_pdv.sale.exception.SaleNotFoundException;
+import dev.mota.sistema_pdv.sale.mapper.SaleMapper;
 import dev.mota.sistema_pdv.user.User;
 import dev.mota.sistema_pdv.user.UserRepository;
 import dev.mota.sistema_pdv.user.exception.UserNotFoundException;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Registra e cancela vendas. Tudo numa transação: se um item falhar (sem estoque,
+ * Registra e cancela vendas. Tudo numa transação: se um item falhar (sem
+ * estoque,
  * arquivado, alterado por outro caixa), nada é gravado.
  */
 @Service
@@ -32,6 +39,7 @@ public class SaleService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final SaleMapper saleMapper;
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Sao_Paulo");
 
     /** O vendedor vem da sessão (e-mail do logado), nunca do JSON. */
     @Transactional
@@ -44,8 +52,8 @@ public class SaleService {
 
         Sale sale = Sale.create(number, seller, request.paymentMethod(), request.customerCpf(), movement);
 
-        mergeQuantities(request.items()).forEach((productId, quantity) ->
-                sale.addItem(findProduct(productId), quantity));
+        mergeQuantities(request.items())
+                .forEach((productId, quantity) -> sale.addItem(findProduct(productId), quantity));
 
         // Depois dos itens: o desconto é conferido contra o subtotal já calculado.
         sale.applyDiscount(request.discountInCents());
@@ -70,13 +78,34 @@ public class SaleService {
         return saleMapper.toResponse(saleRepository.saveAndFlush(sale));
     }
 
-    /** O mesmo produto duas vezes na lista vira um item só, com as quantidades somadas. */
+    /**
+     * O mesmo produto duas vezes na lista vira um item só, com as quantidades
+     * somadas.
+     */
     private Map<UUID, Integer> mergeQuantities(List<SaleItemRequest> items) {
         Map<UUID, Integer> quantities = new LinkedHashMap<>(); // mantém a ordem do carrinho
         for (SaleItemRequest item : items) {
             quantities.merge(item.productId(), item.quantity(), Math::addExact);
         }
         return quantities;
+    }
+
+    @Transactional(readOnly = true)
+    public List<SaleSummaryResponse> findByPeriod(LocalDate from, LocalDate to) {
+
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("A data inicial deve ser antes da final");
+
+        }
+        Instant start = from.atStartOfDay(STORE_ZONE).toInstant();
+        Instant end = to.plusDays(1).atStartOfDay(STORE_ZONE).toInstant();
+
+        return saleRepository
+                .findAllByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(start, end)
+                .stream()
+                .map(saleMapper::toSummary)
+                .toList();
+
     }
 
     private Product findProduct(UUID productId) {
