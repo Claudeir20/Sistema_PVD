@@ -20,3 +20,23 @@ jobs:                         # 2. O QUE roda (jobs em paralelo)
           java-version: "25"
           cache: maven
       - run: sh ./mvnw -B test           # "run"  = comando de terminal
+
+  frontend:                   # roda ao mesmo tempo que o backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sistema-pdv/frontend
+    steps:                    # os mesmos passos do Dockerfile, para o erro aparecer no PR e não no deploy
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3               # mesma versão do Dockerfile
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: sistema-pdv/frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit      # tipos do TypeScript
+      - run: pnpm test                   # testes (vitest)
+      - run: pnpm build                  # o build que vai para dentro do JAR
