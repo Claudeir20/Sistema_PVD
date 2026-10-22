@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from "react-router-dom"
 import LoginPage from "../features/auth/LoginPage"
 import ProductsPage from "../features/products/ProductsPage"
+import UsersPage from "../features/users/UsersPage"
 import RequireAuth from "../features/auth/RequireAuth"
 import CustomerTrackingPage from "../features/customer-portal/pages/CustomerTrackingPage"
 import DashboardPage from "../features/dashboard/DashboardPage"
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
       {
         path: "/produtos",
         element: <ProductsPage />,
+      },
+      {
+        path: "/usuarios",
+        element: <UsersPage />,
       },
     ],
   },

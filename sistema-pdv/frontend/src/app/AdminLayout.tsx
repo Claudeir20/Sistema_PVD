@@ -10,6 +10,7 @@ const navigation = [
   { label: "Financeiro", to: "/painel?area=financeiro" },
   { label: "Clientes", to: "/painel?area=clientes" },
   { label: "Notas fiscais", to: "/painel?area=notas-fiscais" },
+  { label: "Usuários", to: "/usuarios" },
   { label: "Configurações", to: "/painel?area=configuracoes" },
 ]
 
