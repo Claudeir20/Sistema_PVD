@@ -25,10 +25,9 @@ type OpenDialog =
   | { type: "ROLE"; user: User }
   | { type: "DEACTIVATE"; user: User }
 
-const roleBadge: Record<Role, "info" | "neutral" | "warning"> = {
+const roleBadge: Record<Role, "info" | "neutral"> = {
   ADMIN: "info",
   CAIXA: "neutral",
-  TECNICO: "warning",
 }
 
 /** Usuários do sistema (só ADMIN): cadastrar, trocar perfil, desativar e reativar. */
