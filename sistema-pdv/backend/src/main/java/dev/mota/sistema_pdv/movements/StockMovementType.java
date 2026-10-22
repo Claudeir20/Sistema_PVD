@@ -9,5 +9,7 @@ public enum StockMovementType {
     /** Contagem física: a diferença pode ser positiva ou negativa. */
     ADJUSTMENT,
     /** Saída por venda no PDV. */
-    SALE
+    SALE,
+    /** Venda cancelada */
+    SALE_CANCELLATION
 }

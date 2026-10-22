@@ -28,12 +28,15 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 
 /**
- * Venda do PDV. O estoque nunca é alterado direto por aqui: cada item passa pela
+ * Venda do PDV. O estoque nunca é alterado direto por aqui: cada item passa
+ * pela
  * StockMovement da venda, que baixa o estoque e registra no histórico.
  * <ul>
- *   <li>Preço: vem do produto (banco) no momento do addItem, nunca do frontend.</li>
- *   <li>Totais: calculados pela própria venda a partir dos itens.</li>
- *   <li>Cancelamento: operação da venda inteira; devolve todos os itens ao estoque.</li>
+ * <li>Preço: vem do produto (banco) no momento do addItem, nunca do
+ * frontend.</li>
+ * <li>Totais: calculados pela própria venda a partir dos itens.</li>
+ * <li>Cancelamento: operação da venda inteira; devolve todos os itens ao
+ * estoque.</li>
  * </ul>
  */
 @Entity
@@ -65,7 +68,9 @@ public class Sale {
     @Column(nullable = false)
     private long totalInCents;
 
-    /** Opcional: só os 11 dígitos. A validação do CPF entra na seção de Clientes. */
+    /**
+     * Opcional: só os 11 dígitos. A validação do CPF entra na seção de Clientes.
+     */
     @Column(length = 11)
     private String customerCpf;
 
@@ -78,7 +83,9 @@ public class Sale {
     @JoinColumn(name = "stock_movement_id", nullable = false, unique = true, updatable = false)
     private StockMovement stockMovement;
 
-    /** Entrada que devolveu os itens ao estoque; só existe se a venda foi cancelada. */
+    /**
+     * Entrada que devolveu os itens ao estoque; só existe se a venda foi cancelada.
+     */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cancellation_movement_id", unique = true)
     private StockMovement cancellationMovement;
@@ -90,10 +97,11 @@ public class Sale {
     private List<SaleItem> items = new ArrayList<>();
 
     protected Sale() {
+
     }
 
     private Sale(long number, User seller, PaymentMethod paymentMethod, String customerCpf,
-                 StockMovement stockMovement) {
+            StockMovement stockMovement) {
         this.id = UUID.randomUUID();
         this.number = number;
         this.status = SaleStatus.COMPLETED;
@@ -106,7 +114,7 @@ public class Sale {
 
     /** Cria a venda vazia. Os produtos entram depois, com addItem. */
     public static Sale create(long number, User seller, PaymentMethod paymentMethod, String customerCpf,
-                              StockMovement stockMovement) {
+            StockMovement stockMovement) {
         if (number <= 0) {
             throw new IllegalArgumentException("Número da venda inválido.");
         }
@@ -122,7 +130,10 @@ public class Sale {
         return new Sale(number, seller, paymentMethod, validCpf(customerCpf), stockMovement);
     }
 
-    /** Baixa o estoque (pela movimentação) e registra o item com o preço atual do produto. */
+    /**
+     * Baixa o estoque (pela movimentação) e registra o item com o preço atual do
+     * produto.
+     */
     public void addItem(Product product, int quantity) {
         requireNotCanceled();
         if (product == null) {
@@ -151,7 +162,8 @@ public class Sale {
     }
 
     /**
-     * Cancela a venda inteira: todos os itens voltam ao estoque por uma movimentação de entrada,
+     * Cancela a venda inteira: todos os itens voltam ao estoque por uma
+     * movimentação de entrada,
      * que fica registrada junto da venda.
      */
     public void cancel(StockMovement returnMovement) {
