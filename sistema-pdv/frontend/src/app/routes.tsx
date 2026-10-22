@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from "react-router-dom"
 import LoginPage from "../features/auth/LoginPage"
 import ProductsPage from "../features/products/ProductsPage"
+import StockPage from "../features/stock/StockPage"
 import UsersPage from "../features/users/UsersPage"
 import RequireAuth from "../features/auth/RequireAuth"
 import CustomerTrackingPage from "../features/customer-portal/pages/CustomerTrackingPage"
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
       {
         path: "/produtos",
         element: <ProductsPage />,
+      },
+      {
+        path: "/estoque",
+        element: <StockPage />,
       },
       {
         path: "/usuarios",
