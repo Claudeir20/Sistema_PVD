@@ -6,7 +6,6 @@ import { formatMoney } from "../../domain/formatters"
 import { useAuth } from "../auth/AuthContext"
 import useProducts from "../products/useProducts"
 import { accountsPayable } from "../../services/accountsPayable"
-import { exampleSales, sales } from "../../services/sales"
 import { serviceOrders } from "../../services/serviceOrders"
 import {
   calculateDashboardMetrics,
@@ -19,10 +18,9 @@ import PeriodFilter from "./components/PeriodFilter"
 import SalesByDayChart from "./components/SalesByDayChart"
 import ServiceOrdersByStatus from "./components/ServiceOrdersByStatus"
 import UpcomingPayables from "./components/UpcomingPayables"
-import useDashboardUpdates from "./hooks/useDashboardUpdates"
+import useSalesByPeriod from "./hooks/useSalesByPeriod"
 
 export default function DashboardPage() {
-  useDashboardUpdates()
   const {
     products,
     status: productsStatus,
@@ -34,14 +32,15 @@ export default function DashboardPage() {
   const firstName = user?.name.split(" ")[0] ?? ""
   const [period, setPeriod] = useState<DashboardPeriod>("TODAY")
   const now = useMemo(() => new Date(), [])
-  const allSales = [...exampleSales, ...sales]
-  const metrics = calculateDashboardMetrics(
-    allSales,
-    serviceOrders,
-    period,
-    now,
-  )
-  const dailySales = groupSalesByDay(allSales, period, now)
+  const {
+    sales,
+    canceledCount,
+    loading: salesLoading,
+    error: salesError,
+    retry: retrySales,
+  } = useSalesByPeriod(period, now)
+  const metrics = calculateDashboardMetrics(sales, serviceOrders, period, now)
+  const dailySales = groupSalesByDay(sales, period, now)
 
   return (
     <main className="min-w-0 flex-1 bg-[#f4f4f2] px-4 py-6 sm:px-6 lg:px-8">
@@ -52,12 +51,41 @@ export default function DashboardPage() {
           title={`${getGreeting(now.getHours())}, ${firstName}`}
         />
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {salesError ? (
+          <p
+            className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            role="alert"
+          >
+            Não foi possível carregar as vendas: {salesError}{" "}
+            <button
+              className="font-semibold underline"
+              onClick={retrySales}
+              type="button"
+            >
+              Tentar de novo
+            </button>
+          </p>
+        ) : null}
+
+        <section
+          aria-busy={salesLoading}
+          className={`mt-6 grid gap-4 transition-opacity sm:grid-cols-2 xl:grid-cols-4 ${
+            salesLoading ? "opacity-60" : ""
+          }`}
+        >
           <MetricCard
             label="Faturamento"
             value={formatMoney(metrics.revenueInCents)}
           />
-          <MetricCard label="Vendas" value={metrics.salesCount} />
+          <MetricCard
+            helper={
+              canceledCount > 0
+                ? `${canceledCount} cancelada${canceledCount > 1 ? "s" : ""} (fora do total)`
+                : undefined
+            }
+            label="Vendas"
+            value={metrics.salesCount}
+          />
           <MetricCard
             label="Ticket médio"
             value={formatMoney(metrics.averageTicketInCents)}

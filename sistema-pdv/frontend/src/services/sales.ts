@@ -64,11 +64,45 @@ export function toRegisteredSale(response: SaleResponse): RegisteredSale {
   }
 }
 
-/**
- * Vendas registradas nesta sessão, para o painel reagir na hora.
- * TODO (Parte 3): o painel passa a ler GET /api/sales e esta lista sai.
- */
-export const sales: RegisteredSale[] = []
+/** O que GET /api/sales devolve: o resumo de cada venda, sem os itens. */
+export interface SaleSummaryResponse {
+  id: string
+  number: string
+  status: "COMPLETED" | "CANCELED"
+  paymentMethod: PaymentMethod
+  totalInCents: number
+  createdAt: string
+}
+
+/** Venda no formato do painel: o suficiente para faturamento, contagem e gráfico. */
+export interface SaleSummary {
+  id: string
+  number: string
+  canceled: boolean
+  paymentMethod: PaymentMethod
+  date: Date
+  totals: { totalInCents: number }
+}
+
+export function toSaleSummary(response: SaleSummaryResponse): SaleSummary {
+  return {
+    id: response.id,
+    number: response.number,
+    canceled: response.status === "CANCELED",
+    paymentMethod: response.paymentMethod,
+    date: new Date(response.createdAt),
+    totals: { totalInCents: response.totalInCents },
+  }
+}
+
+/** Vendas de um período (datas AAAA-MM-DD, dias inteiros). Só ADMIN. */
+export async function fetchSalesByPeriod(from: string, to: string) {
+  const params = new URLSearchParams({ from, to })
+  const response = await apiFetch<SaleSummaryResponse[]>(`/api/sales?${params}`)
+  return response.map(toSaleSummary)
+}
+
+/** Avisa o painel que uma venda foi registrada nesta aba, para ele buscar de novo. */
 let salesVersion = 0
 const salesListeners = new Set<() => void>()
 
@@ -85,45 +119,6 @@ export function subscribeSales(listener: () => void) {
   salesListeners.add(listener)
   return () => salesListeners.delete(listener)
 }
-
-function dateDaysAgo(days: number, hour: number) {
-  const date = new Date()
-  date.setHours(hour, 0, 0, 0)
-  date.setDate(date.getDate() - days)
-  return date
-}
-
-function exampleSale(
-  number: string,
-  daysAgo: number,
-  totalInCents: number,
-  paymentMethod: PaymentMethod,
-): RegisteredSale {
-  return {
-    number,
-    date: dateDaysAgo(daysAgo, 10 + (daysAgo % 6)),
-    items: [],
-    totals: {
-      subtotalInCents: totalInCents,
-      discountInCents: 0,
-      totalInCents,
-    },
-    paymentMethod,
-    customer: null,
-  }
-}
-
-export const exampleSales: RegisteredSale[] = [
-  exampleSale("V-0101", 0, 18990, "PIX"),
-  exampleSale("V-0100", 0, 6490, "CREDIT"),
-  exampleSale("V-0099", 1, 12980, "DEBIT"),
-  exampleSale("V-0098", 2, 8990, "PIX"),
-  exampleSale("V-0097", 3, 15980, "CASH"),
-  exampleSale("V-0096", 5, 2990, "PIX"),
-  exampleSale("V-0095", 6, 24990, "CREDIT"),
-  exampleSale("V-0094", 12, 11990, "PIX"),
-  exampleSale("V-0093", 20, 7990, "DEBIT"),
-]
 
 export type SaleStockValidation =
   { valid: true } | { valid: false; message: string }
@@ -163,11 +158,6 @@ export function validateSaleStock(
   return { valid: true }
 }
 
-export function resetSalesForTests() {
-  sales.splice(0, sales.length)
-  emitSalesChanged()
-}
-
 /**
  * Registra a venda no backend: ele confere o estoque, usa o preço do banco, calcula os
  * totais, baixa o estoque e gera o número (V-0042). O frontend só manda o id e a quantidade.
@@ -187,7 +177,6 @@ export async function registerSale(input: RegisterSaleInput) {
   })
 
   const sale = toRegisteredSale(response)
-  sales.push(sale)
   emitSalesChanged()
 
   // O backend baixou o estoque: recarrega para a busca e o painel mostrarem o saldo novo.
