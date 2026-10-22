@@ -1,6 +1,11 @@
 import type { ServiceOrderStatus } from "../../domain/serviceOrderStatus"
 import type { DashboardServiceOrder } from "../../services/serviceOrders"
-import type { RegisteredSale } from "../../services/sales"
+
+/** O que o painel precisa de uma venda (serve para SaleSummary e RegisteredSale). */
+export interface DashboardSale {
+  date: Date
+  totals: { totalInCents: number }
+}
 
 export type DashboardPeriod = "TODAY" | "SEVEN_DAYS" | "MONTH"
 
@@ -32,7 +37,7 @@ export function getPeriodStart(period: DashboardPeriod, now = new Date()) {
 }
 
 export function filterSalesByPeriod(
-  sales: readonly RegisteredSale[],
+  sales: readonly DashboardSale[],
   period: DashboardPeriod,
   now = new Date(),
 ) {
@@ -44,7 +49,7 @@ export function filterSalesByPeriod(
 }
 
 export function calculateDashboardMetrics(
-  sales: readonly RegisteredSale[],
+  sales: readonly DashboardSale[],
   serviceOrders: readonly DashboardServiceOrder[],
   period: DashboardPeriod,
   now = new Date(),
@@ -69,7 +74,7 @@ export function calculateDashboardMetrics(
 }
 
 export function groupSalesByDay(
-  sales: readonly RegisteredSale[],
+  sales: readonly DashboardSale[],
   period: DashboardPeriod,
   now = new Date(),
 ) {
@@ -93,7 +98,8 @@ export function groupSalesByDay(
   return result
 }
 
-function getLocalDateKey(date: Date) {
+/** Data local no formato AAAA-MM-DD (o mesmo que a API de vendas recebe). */
+export function getLocalDateKey(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, "0")
   const day = String(date.getDate()).padStart(2, "0")

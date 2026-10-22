@@ -2,9 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { Product } from "../domain/types"
 import { resetProductsForTests } from "./products"
 import {
+  fetchSalesByPeriod,
   registerSale,
-  resetSalesForTests,
-  sales,
   subscribeSales,
   validateSaleStock,
   type RegisterSaleInput,
@@ -84,7 +83,6 @@ function mockFetch(saleStatus: number, saleBody: unknown) {
 describe("registerSale", () => {
   beforeEach(() => {
     resetProductsForTests([cable, screenProtector])
-    resetSalesForTests()
   })
   afterEach(() => vi.unstubAllGlobals())
 
@@ -122,7 +120,6 @@ describe("registerSale", () => {
       },
       customer: { cpf: "52998224725" },
     })
-    expect(sales).toHaveLength(1)
   })
 
   it("sends null when there is no customer", async () => {
@@ -147,7 +144,9 @@ describe("registerSale", () => {
     unsubscribe()
   })
 
-  it("passes on the backend message and records nothing", async () => {
+  it("passes on the backend message and does not notify", async () => {
+    const listener = vi.fn()
+    const unsubscribe = subscribeSales(listener)
     mockFetch(400, {
       message: "Estoque insuficiente para Cabo USB-C reforçado. Disponível: 1.",
     })
@@ -155,7 +154,8 @@ describe("registerSale", () => {
     await expect(registerSale(input)).rejects.toThrow(
       "Estoque insuficiente para Cabo USB-C reforçado. Disponível: 1.",
     )
-    expect(sales).toHaveLength(0)
+    expect(listener).not.toHaveBeenCalled()
+    unsubscribe()
   })
 })
 
@@ -183,5 +183,61 @@ describe("validateSaleStock", () => {
       valid: false,
       message: `Estoque insuficiente para ${screenProtector.name}. Disponível: ${screenProtector.stock}.`,
     })
+  })
+})
+
+describe("fetchSalesByPeriod", () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("asks for whole days and marks canceled sales", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            id: "a",
+            number: "V-0002",
+            status: "CANCELED",
+            paymentMethod: "DEBIT",
+            totalInCents: 5980,
+            createdAt: "2026-10-22T16:00:00Z",
+          },
+          {
+            id: "b",
+            number: "V-0001",
+            status: "COMPLETED",
+            paymentMethod: "CASH",
+            totalInCents: 2990,
+            createdAt: "2026-10-22T15:00:00Z",
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+    vi.stubGlobal("document", { cookie: "" })
+
+    const result = await fetchSalesByPeriod("2026-10-01", "2026-10-22")
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "/api/sales?from=2026-10-01&to=2026-10-22",
+    )
+    expect(result).toEqual([
+      {
+        id: "a",
+        number: "V-0002",
+        canceled: true,
+        paymentMethod: "DEBIT",
+        date: new Date("2026-10-22T16:00:00Z"),
+        totals: { totalInCents: 5980 },
+      },
+      {
+        id: "b",
+        number: "V-0001",
+        canceled: false,
+        paymentMethod: "CASH",
+        date: new Date("2026-10-22T15:00:00Z"),
+        totals: { totalInCents: 2990 },
+      },
+    ])
   })
 })
