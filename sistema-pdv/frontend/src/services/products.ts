@@ -189,3 +189,20 @@ export async function archiveProduct(productId: string) {
 export function fetchProductMovements(productId: string) {
   return apiFetch<ProductMovement[]>(`/api/products/${productId}/movements`)
 }
+
+/**
+ * Contagem física: o estoque passa a ser exatamente o contado, e a diferença fica
+ * no histórico com o motivo (ex.: "Contagem mensal", "Avaria").
+ */
+export async function adjustProductStock(
+  productId: string,
+  countedQuantity: number,
+  reason: string,
+) {
+  const adjusted = await apiFetch<ProductResponse>(
+    `/api/products/${productId}/adjust`,
+    { method: "POST", body: JSON.stringify({ countedQuantity, reason }) },
+  )
+  void loadProducts()
+  return adjusted
+}

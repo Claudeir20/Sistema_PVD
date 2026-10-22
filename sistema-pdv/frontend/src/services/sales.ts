@@ -184,3 +184,21 @@ export async function registerSale(input: RegisterSaleInput) {
 
   return sale
 }
+
+/** Detalhe de uma venda: itens, vendedor, CPF e totais. */
+export function fetchSaleById(saleId: string) {
+  return apiFetch<SaleResponse>(`/api/sales/${saleId}`)
+}
+
+/**
+ * Cancela a venda inteira (só ADMIN): o backend devolve os itens ao estoque.
+ * Recarrega os produtos para o PDV ver o estoque de volta e avisa o painel.
+ */
+export async function cancelSale(saleId: string) {
+  const canceled = await apiFetch<SaleResponse>(`/api/sales/${saleId}/cancel`, {
+    method: "POST",
+  })
+  void loadProducts()
+  emitSalesChanged()
+  return canceled
+}
