@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import type { Product } from "../domain/types"
 import { products, resetProductsForTests } from "./products"
 import {
   registerSale,
@@ -8,9 +9,29 @@ import {
   validateSaleStock,
 } from "./sales"
 
+// A venda ainda é simulada e baixa o estoque em memória (Parte 2 liga à API).
+const exampleProducts: Product[] = [
+  {
+    id: "cable-usbc",
+    barcode: "7891000000011",
+    name: "Cabo USB-C reforçado",
+    priceInCents: 2990,
+    stock: 18,
+    minStock: 5,
+  },
+  {
+    id: "screen-protector",
+    barcode: "7891000000028",
+    name: "Película de vidro 6,1”",
+    priceInCents: 3990,
+    stock: 4,
+    minStock: 6,
+  },
+]
+
 describe("registerSale", () => {
   beforeEach(() => {
-    resetProductsForTests()
+    resetProductsForTests(exampleProducts)
     resetSalesForTests()
   })
 
