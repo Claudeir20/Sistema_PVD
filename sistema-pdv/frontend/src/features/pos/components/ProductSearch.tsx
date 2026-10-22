@@ -1,7 +1,7 @@
 import { useState, type RefObject } from "react"
 import { formatMoney } from "../../../domain/formatters"
 import type { Product } from "../../../domain/types"
-import { products } from "../../../services/products"
+import useProducts from "../../products/useProducts"
 import { moveProductSelection, searchProducts } from "../productSearch"
 
 interface ProductSearchProps {
@@ -23,6 +23,7 @@ export default function ProductSearch({
   const [error, setError] = useState("")
   const [matches, setMatches] = useState<Product[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const { products, status, error: loadError, reload } = useProducts()
 
   function chooseProduct(product: Product) {
     const addError = onAddProduct(product)
@@ -45,7 +46,11 @@ export default function ProductSearch({
     const result = searchProducts(products, query)
 
     if (result.type === "EMPTY") {
-      setError("Produto não encontrado.")
+      setError(
+        status === "LOADING"
+          ? "Os produtos ainda estão carregando. Tente de novo em instantes."
+          : "Produto não encontrado.",
+      )
       setMatches([])
       inputRef.current?.focus()
       return
@@ -162,6 +167,58 @@ export default function ProductSearch({
           {error}
         </p>
       ) : null}
+      <CatalogStatus
+        error={loadError}
+        isEmpty={products.length === 0}
+        onRetry={reload}
+        status={status}
+      />
     </div>
   )
+}
+
+interface CatalogStatusProps {
+  status: ReturnType<typeof useProducts>["status"]
+  error: string
+  isEmpty: boolean
+  onRetry: () => void
+}
+
+/** Avisa quando a busca ainda não tem produtos para procurar. */
+function CatalogStatus({
+  status,
+  error,
+  isEmpty,
+  onRetry,
+}: CatalogStatusProps) {
+  if (status === "ERROR") {
+    return (
+      <p className="mt-2 text-sm text-red-700" role="alert">
+        Não foi possível carregar os produtos: {error}{" "}
+        <button
+          className="font-semibold underline"
+          onClick={onRetry}
+          type="button"
+        >
+          Tentar de novo
+        </button>
+      </p>
+    )
+  }
+
+  if (status === "LOADING" && isEmpty) {
+    return (
+      <p className="mt-2 text-sm text-neutral-500">Carregando produtos...</p>
+    )
+  }
+
+  if (status === "READY" && isEmpty) {
+    return (
+      <p className="mt-2 text-sm text-neutral-500">
+        Nenhum produto cadastrado ainda.
+      </p>
+    )
+  }
+
+  return null
 }

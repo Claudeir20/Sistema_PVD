@@ -44,14 +44,16 @@ export default function usePosSale() {
   const [pixPayment, setPixPayment] = useState<PixPayment | null>(null)
   const [loadingPix, setLoadingPix] = useState(false)
   const [notice, setNotice] = useState("")
+  // Enquanto a API responde: impede o segundo clique (venda duplicada).
+  const [submitting, setSubmitting] = useState(false)
 
   const totals = useMemo(
     () => calculateCartTotals(cart, discountInCents),
     [cart, discountInCents],
   )
   const canFinish = useMemo(
-    () => canFinalizeSale(cart, discountInCents),
-    [cart, discountInCents],
+    () => !submitting && canFinalizeSale(cart, discountInCents),
+    [cart, discountInCents, submitting],
   )
   const saleItems: RegisterSaleItem[] = cart.map((item) => ({
     productId: item.product.id,
@@ -78,9 +80,10 @@ export default function usePosSale() {
   const openDiscount = useCallback(() => setDiscountDialogOpen(true), [])
 
   const completeSale = useCallback(
-    (event: "PAYMENT_CONFIRMED" | "COMPLETE_SALE") => {
+    async (event: "PAYMENT_CONFIRMED" | "COMPLETE_SALE") => {
+      setSubmitting(true)
       try {
-        const sale = registerSale({
+        const sale = await registerSale({
           items: saleItems,
           totals,
           paymentMethod,
@@ -95,24 +98,29 @@ export default function usePosSale() {
         setNotice(`Venda concluída — ${sale.number}`)
         focusSearch()
       } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível registrar a venda."
+
         if (event === "PAYMENT_CONFIRMED") {
           setSaleStatus((current) =>
             transitionSaleStatus(current, "REGISTRATION_FAILED"),
           )
           setLoadingPix(false)
-          setNotice("Pagamento recebido, mas a venda precisa de conferência")
+          setNotice(
+            `Pagamento recebido, mas a venda precisa de conferência: ${message}`,
+          )
           return
         }
 
         paymentAttemptRef.current += 1
         setPixPayment(null)
         setLoadingPix(false)
-        setNotice(
-          error instanceof Error
-            ? error.message
-            : "Não foi possível registrar a venda.",
-        )
+        setNotice(message)
         focusSearch()
+      } finally {
+        setSubmitting(false)
       }
     },
     [customer, focusSearch, paymentMethod, saleItems, totals],
@@ -151,12 +159,12 @@ export default function usePosSale() {
         if (paymentAttemptRef.current !== paymentAttempt) return
 
         setPixPayment(confirmedPayment)
-        completeSale("PAYMENT_CONFIRMED")
+        await completeSale("PAYMENT_CONFIRMED")
       })()
       return
     }
 
-    completeSale("COMPLETE_SALE")
+    void completeSale("COMPLETE_SALE")
   }, [
     canFinish,
     completeSale,

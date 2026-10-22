@@ -1,62 +1,44 @@
 import type { Product } from "../domain/types"
+import { apiFetch } from "./api"
 
-const initialProducts: Product[] = [
-  {
-    id: "cable-usbc",
-    barcode: "7891000000011",
-    name: "Cabo USB-C reforçado",
-    priceInCents: 2990,
-    stock: 18,
-    minStock: 5,
-  },
-  {
-    id: "screen-protector",
-    barcode: "7891000000028",
-    name: "Película de vidro 6,1”",
-    priceInCents: 3990,
-    stock: 4,
-    minStock: 6,
-  },
-  {
-    id: "cable-lightning",
-    barcode: "7891000000066",
-    name: "Cabo Lightning reforçado",
-    priceInCents: 3490,
-    stock: 3,
-    minStock: 4,
-  },
-  {
-    id: "charger-20w",
-    barcode: "7891000000035",
-    name: "Carregador rápido 20W",
-    priceInCents: 8990,
-    stock: 2,
-    minStock: 3,
-  },
-  {
-    id: "headphones",
-    barcode: "7891000000042",
-    name: "Fone de ouvido com microfone",
-    priceInCents: 6490,
-    stock: 10,
-    minStock: 4,
-  },
-  {
-    id: "phone-case",
-    barcode: "7891000000059",
-    name: "Capa protetora transparente",
-    priceInCents: 4990,
-    stock: 15,
-    minStock: 5,
-  },
-]
-
-function cloneProducts() {
-  return initialProducts.map((product) => ({ ...product }))
+/** O que GET /api/products devolve (ProductResponse do backend). */
+export interface ProductResponse {
+  id: string
+  barcode: string
+  name: string
+  priceInCents: number
+  stockQuantity: number
+  minStock: number
+  active: boolean
+  version: number
+  belowMinStock: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export const products: Product[] = cloneProducts()
+export type ProductsStatus = "IDLE" | "LOADING" | "READY" | "ERROR"
 
+/** Único lugar que traduz os nomes do backend para os do frontend. */
+export function toProduct(response: ProductResponse): Product {
+  return {
+    id: response.id,
+    barcode: response.barcode,
+    name: response.name,
+    priceInCents: response.priceInCents,
+    stock: response.stockQuantity,
+    minStock: response.minStock,
+  }
+}
+
+/**
+ * Produtos ativos vindos da API, guardados em memória para a busca do PDV ser
+ * instantânea (o leitor de código de barras não espera rede).
+ */
+export const products: Product[] = []
+
+let status: ProductsStatus = "IDLE"
+let errorMessage = ""
+let pendingLoad: Promise<void> | null = null
 let productsVersion = 0
 const productListeners = new Set<() => void>()
 
@@ -69,42 +51,75 @@ export function getProductsVersion() {
   return productsVersion
 }
 
+export function getProductsStatus() {
+  return status
+}
+
+export function getProductsError() {
+  return errorMessage
+}
+
 export function subscribeProducts(listener: () => void) {
   productListeners.add(listener)
   return () => productListeners.delete(listener)
 }
 
-export function restockProduct(productId: string, quantity: number) {
+/** Busca os produtos no backend. Chamadas simultâneas reaproveitam a mesma requisição. */
+export function loadProducts(): Promise<void> {
+  if (pendingLoad) return pendingLoad
+
+  status = "LOADING"
+  errorMessage = ""
+  emitProductsChanged()
+
+  pendingLoad = apiFetch<ProductResponse[]>("/api/products")
+    .then((response) => {
+      products.splice(0, products.length, ...response.map(toProduct))
+      status = "READY"
+    })
+    .catch((error: unknown) => {
+      status = "ERROR"
+      errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar os produtos."
+    })
+    .finally(() => {
+      pendingLoad = null
+      emitProductsChanged()
+    })
+
+  return pendingLoad
+}
+
+/** Registra a entrada no backend e atualiza o produto em memória com a resposta. */
+export async function restockProduct(productId: string, quantity: number) {
   if (!Number.isInteger(quantity) || quantity <= 0) {
     throw new Error(
       "A quantidade recebida deve ser um número inteiro positivo.",
     )
   }
 
-  const product = products.find((candidate) => candidate.id === productId)
+  const response = await apiFetch<ProductResponse>(
+    `/api/products/${productId}/restock`,
+    { method: "POST", body: JSON.stringify({ quantity }) },
+  )
 
-  if (!product) {
-    throw new Error("Produto não encontrado.")
-  }
-
-  product.stock += quantity
+  const updated = toProduct(response)
+  const index = products.findIndex((product) => product.id === productId)
+  if (index >= 0) products[index] = updated
   emitProductsChanged()
-  return product
+  return updated
 }
 
-export function decreaseProductStock(productId: string, quantity: number) {
-  const product = products.find((candidate) => candidate.id === productId)
-
-  if (!product || quantity <= 0 || quantity > product.stock) {
-    throw new Error("Não foi possível baixar o estoque do produto.")
-  }
-
-  product.stock -= quantity
-  emitProductsChanged()
-  return product
-}
-
-export function resetProductsForTests() {
-  products.splice(0, products.length, ...cloneProducts())
+export function resetProductsForTests(initialProducts: Product[] = []) {
+  products.splice(
+    0,
+    products.length,
+    ...initialProducts.map((product) => ({ ...product })),
+  )
+  status = initialProducts.length > 0 ? "READY" : "IDLE"
+  errorMessage = ""
+  pendingLoad = null
   emitProductsChanged()
 }

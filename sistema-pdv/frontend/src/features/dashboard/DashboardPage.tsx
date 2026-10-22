@@ -4,8 +4,8 @@ import MetricCard from "../../components/ui/MetricCard"
 import PageHeader from "../../components/ui/PageHeader"
 import { formatMoney } from "../../domain/formatters"
 import { useAuth } from "../auth/AuthContext"
+import useProducts from "../products/useProducts"
 import { accountsPayable } from "../../services/accountsPayable"
-import { products } from "../../services/products"
 import { exampleSales, sales } from "../../services/sales"
 import { serviceOrders } from "../../services/serviceOrders"
 import {
@@ -23,6 +23,12 @@ import useDashboardUpdates from "./hooks/useDashboardUpdates"
 
 export default function DashboardPage() {
   useDashboardUpdates()
+  const {
+    products,
+    status: productsStatus,
+    error: productsError,
+    reload,
+  } = useProducts()
   const { user } = useAuth()
   // Só o primeiro nome: "Bom dia, Maria", não "Bom dia, Maria da Silva".
   const firstName = user?.name.split(" ")[0] ?? ""
@@ -65,7 +71,12 @@ export default function DashboardPage() {
         </section>
 
         <section className="mt-5 grid gap-5 xl:grid-cols-2">
-          <LowStockList products={products} />
+          <LowStockList
+            error={productsError}
+            onRetry={reload}
+            products={products}
+            status={productsStatus}
+          />
           <UpcomingPayables accounts={accountsPayable} now={now} />
         </section>
       </div>

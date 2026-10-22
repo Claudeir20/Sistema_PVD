@@ -37,8 +37,8 @@ export interface Product {
   minStock: number
 }
 
+/** Só o CPF na nota: o backend não guarda nome (o cadastro de clientes vem depois). */
 export interface PosCustomer {
-  name?: string
   cpf: string
 }
 

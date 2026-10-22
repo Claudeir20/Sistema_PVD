@@ -2,17 +2,26 @@ import { useState } from "react"
 import Button from "../../../components/ui/Button"
 import Card from "../../../components/ui/Card"
 import type { Product } from "../../../domain/types"
-import { restockProduct } from "../../../services/products"
+import { restockProduct, type ProductsStatus } from "../../../services/products"
 import RestockProductDialog from "./RestockProductDialog"
 
 interface LowStockListProps {
   products: readonly Product[]
+  status: ProductsStatus
+  error: string
+  onRetry: () => void
 }
 
-export default function LowStockList({ products }: LowStockListProps) {
+export default function LowStockList({
+  products,
+  status,
+  error,
+  onRetry,
+}: LowStockListProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  // Mesma regra do backend (Product.isBelowMinStock): no mínimo já pede reposição.
   const lowStockProducts = products.filter(
-    (product) => product.stock < product.minStock,
+    (product) => product.stock <= product.minStock,
   )
 
   return (
@@ -28,6 +37,29 @@ export default function LowStockList({ products }: LowStockListProps) {
         </div>
         <BadgeCount count={lowStockProducts.length} />
       </div>
+
+      {status === "LOADING" && products.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-neutral-500">
+          Carregando produtos...
+        </p>
+      ) : null}
+      {status === "ERROR" ? (
+        <p className="px-4 py-6 text-sm text-red-700" role="alert">
+          Não foi possível carregar os produtos: {error}{" "}
+          <button
+            className="font-semibold underline"
+            onClick={onRetry}
+            type="button"
+          >
+            Tentar de novo
+          </button>
+        </p>
+      ) : null}
+      {status === "READY" && lowStockProducts.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-neutral-500">
+          Nenhum produto abaixo do mínimo.
+        </p>
+      ) : null}
 
       <div className="divide-y divide-neutral-200">
         {lowStockProducts.map((product) => {
@@ -53,9 +85,10 @@ export default function LowStockList({ products }: LowStockListProps) {
       </div>
       <RestockProductDialog
         onClose={() => setSelectedProduct(null)}
-        onConfirm={(quantity) => {
+        onConfirm={async (quantity) => {
           if (!selectedProduct) return
-          restockProduct(selectedProduct.id, quantity)
+          // Se a API recusar, o erro sobe para o diálogo, que continua aberto.
+          await restockProduct(selectedProduct.id, quantity)
           setSelectedProduct(null)
         }}
         product={selectedProduct}

@@ -1,133 +1,187 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
-import { products, resetProductsForTests } from "./products"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import type { Product } from "../domain/types"
+import { resetProductsForTests } from "./products"
 import {
   registerSale,
   resetSalesForTests,
   sales,
   subscribeSales,
   validateSaleStock,
+  type RegisterSaleInput,
+  type SaleResponse,
 } from "./sales"
+
+const cable: Product = {
+  id: "3f2a9c1e-0000-4000-8000-000000000001",
+  barcode: "7891000000011",
+  name: "Cabo USB-C reforçado",
+  priceInCents: 2990,
+  stock: 18,
+  minStock: 5,
+}
+
+const screenProtector: Product = {
+  id: "3f2a9c1e-0000-4000-8000-000000000002",
+  barcode: "7891000000028",
+  name: "Película de vidro 6,1”",
+  priceInCents: 3990,
+  stock: 4,
+  minStock: 6,
+}
+
+const input: RegisterSaleInput = {
+  items: [
+    {
+      productId: cable.id,
+      name: cable.name,
+      quantity: 2,
+      unitPriceInCents: 2990,
+    },
+  ],
+  totals: { subtotalInCents: 5980, discountInCents: 500, totalInCents: 5480 },
+  paymentMethod: "PIX",
+  customer: { cpf: "52998224725" },
+}
+
+const createdSale: SaleResponse = {
+  id: "9b0c0000-0000-4000-8000-000000000042",
+  number: "V-0042",
+  status: "COMPLETED",
+  paymentMethod: "PIX",
+  subtotalInCents: 5980,
+  discountInCents: 500,
+  totalInCents: 5480,
+  customerCpf: "52998224725",
+  sellerName: "Maria",
+  createdAt: "2026-10-22T13:00:00Z",
+  items: [
+    {
+      productId: cable.id,
+      productName: cable.name,
+      quantity: 2,
+      unitPriceInCents: 2990,
+      totalInCents: 5980,
+    },
+  ],
+}
+
+/** Responde a venda e, depois, a recarga dos produtos. */
+function mockFetch(saleStatus: number, saleBody: unknown) {
+  const fetchMock = vi.fn((path: string, _init?: RequestInit) =>
+    Promise.resolve(
+      new Response(JSON.stringify(path === "/api/sales" ? saleBody : []), {
+        status: path === "/api/sales" ? saleStatus : 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    ),
+  )
+  vi.stubGlobal("fetch", fetchMock)
+  // Os testes rodam no Node (sem navegador): o apiFetch lê o token CSRF do document.cookie.
+  vi.stubGlobal("document", { cookie: "XSRF-TOKEN=token-de-teste" })
+  return fetchMock
+}
 
 describe("registerSale", () => {
   beforeEach(() => {
-    resetProductsForTests()
+    resetProductsForTests([cable, screenProtector])
     resetSalesForTests()
   })
+  afterEach(() => vi.unstubAllGlobals())
 
-  it("records all sale data and decreases stock", () => {
-    const product = products[0]
-    const initialStock = product.stock
-    const date = new Date("2026-03-12T10:00:00.000Z")
+  it("sends only ids and quantities; prices and totals are the backend's job", async () => {
+    const fetchMock = mockFetch(201, createdSale)
 
-    const sale = registerSale({
-      items: [
-        {
-          productId: product.id,
-          name: product.name,
-          quantity: 2,
-          unitPriceInCents: product.priceInCents,
-        },
-      ],
-      totals: {
-        subtotalInCents: 5980,
-        discountInCents: 0,
-        totalInCents: 5980,
-      },
+    await registerSale(input)
+
+    const [path, options] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ]
+    expect(path).toBe("/api/sales")
+    expect(options.method).toBe("POST")
+    expect(JSON.parse(options.body as string)).toEqual({
+      items: [{ productId: cable.id, quantity: 2 }],
+      discountInCents: 500,
       paymentMethod: "PIX",
-      customer: { cpf: "52998224725", name: "Maria" },
-      date,
+      customerCpf: "52998224725",
     })
+  })
+
+  it("uses the number, date and totals returned by the backend", async () => {
+    mockFetch(201, createdSale)
+
+    const sale = await registerSale(input)
 
     expect(sale).toMatchObject({
-      number: "V-0001",
-      paymentMethod: "PIX",
-      customer: { cpf: "52998224725", name: "Maria" },
-      date,
+      number: "V-0042",
+      date: new Date("2026-10-22T13:00:00Z"),
+      totals: {
+        subtotalInCents: 5980,
+        discountInCents: 500,
+        totalInCents: 5480,
+      },
+      customer: { cpf: "52998224725" },
     })
-    expect(product.stock).toBe(initialStock - 2)
     expect(sales).toHaveLength(1)
   })
 
-  it("notifies subscribers after registering a sale", () => {
-    const product = products[0]
+  it("sends null when there is no customer", async () => {
+    const fetchMock = mockFetch(201, { ...createdSale, customerCpf: null })
+
+    const sale = await registerSale({ ...input, customer: null })
+
+    const options = fetchMock.mock.calls[0][1] as RequestInit
+    expect(JSON.parse(options.body as string).customerCpf).toBeNull()
+    expect(sale.customer).toBeNull()
+  })
+
+  it("notifies subscribers and reloads the products to show the new stock", async () => {
+    const fetchMock = mockFetch(201, createdSale)
     const listener = vi.fn()
     const unsubscribe = subscribeSales(listener)
 
-    registerSale({
-      items: [
-        {
-          productId: product.id,
-          name: product.name,
-          quantity: 1,
-          unitPriceInCents: product.priceInCents,
-        },
-      ],
-      totals: {
-        subtotalInCents: product.priceInCents,
-        discountInCents: 0,
-        totalInCents: product.priceInCents,
-      },
-      paymentMethod: "CASH",
-      customer: null,
-    })
+    await registerSale(input)
 
     expect(listener).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenCalledWith("/api/products", expect.anything())
     unsubscribe()
   })
 
-  it("rejects quantities above stock without changing inventory", () => {
-    const product = products[0]
-    const initialStock = product.stock
+  it("passes on the backend message and records nothing", async () => {
+    mockFetch(400, {
+      message: "Estoque insuficiente para Cabo USB-C reforçado. Disponível: 1.",
+    })
 
-    expect(() =>
-      registerSale({
-        items: [
-          {
-            productId: product.id,
-            name: product.name,
-            quantity: initialStock + 1,
-            unitPriceInCents: product.priceInCents,
-          },
-        ],
-        totals: {
-          subtotalInCents: product.priceInCents * (initialStock + 1),
-          discountInCents: 0,
-          totalInCents: product.priceInCents * (initialStock + 1),
-        },
-        paymentMethod: "CASH",
-        customer: null,
-      }),
-    ).toThrow("Estoque insuficiente")
-
-    expect(product.stock).toBe(initialStock)
+    await expect(registerSale(input)).rejects.toThrow(
+      "Estoque insuficiente para Cabo USB-C reforçado. Disponível: 1.",
+    )
     expect(sales).toHaveLength(0)
   })
+})
 
-  it("validates all item stock before registration", () => {
-    const availableProduct = products[0]
-    const unavailableProduct = products[1]
-
+describe("validateSaleStock", () => {
+  it("validates all item stock before starting a Pix payment", () => {
     const validation = validateSaleStock(
       [
         {
-          productId: availableProduct.id,
-          name: availableProduct.name,
+          productId: cable.id,
+          name: cable.name,
           quantity: 1,
-          unitPriceInCents: availableProduct.priceInCents,
+          unitPriceInCents: cable.priceInCents,
         },
         {
-          productId: unavailableProduct.id,
-          name: unavailableProduct.name,
-          quantity: unavailableProduct.stock + 1,
-          unitPriceInCents: unavailableProduct.priceInCents,
+          productId: screenProtector.id,
+          name: screenProtector.name,
+          quantity: screenProtector.stock + 1,
+          unitPriceInCents: screenProtector.priceInCents,
         },
       ],
-      products,
+      [cable, screenProtector],
     )
 
     expect(validation).toEqual({
       valid: false,
-      message: `Estoque insuficiente para ${unavailableProduct.name}. Disponível: ${unavailableProduct.stock}.`,
+      message: `Estoque insuficiente para ${screenProtector.name}. Disponível: ${screenProtector.stock}.`,
     })
   })
 })

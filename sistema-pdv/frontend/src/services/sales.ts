@@ -1,6 +1,7 @@
 import type { PaymentMethod, PosCustomer, Product } from "../domain/types"
 import type { CartTotals } from "../features/pos/cart"
-import { decreaseProductStock, products } from "./products"
+import { apiFetch } from "./api"
+import { loadProducts } from "./products"
 
 export interface RegisterSaleItem {
   productId: string
@@ -14,7 +15,6 @@ export interface RegisterSaleInput {
   totals: CartTotals
   paymentMethod: PaymentMethod
   customer: PosCustomer | null
-  date?: Date
 }
 
 export interface RegisteredSale extends RegisterSaleInput {
@@ -22,6 +22,52 @@ export interface RegisteredSale extends RegisterSaleInput {
   date: Date
 }
 
+/** O que POST /api/sales devolve (SaleResponse do backend). */
+export interface SaleResponse {
+  id: string
+  number: string
+  status: "COMPLETED" | "CANCELED"
+  paymentMethod: PaymentMethod
+  subtotalInCents: number
+  discountInCents: number
+  totalInCents: number
+  customerCpf: string | null
+  sellerName: string
+  createdAt: string
+  items: {
+    productId: string
+    productName: string
+    quantity: number
+    unitPriceInCents: number
+    totalInCents: number
+  }[]
+}
+
+/** Converte a resposta do backend no formato que o PDV e o painel já usam. */
+export function toRegisteredSale(response: SaleResponse): RegisteredSale {
+  return {
+    number: response.number,
+    date: new Date(response.createdAt),
+    items: response.items.map((item) => ({
+      productId: item.productId,
+      name: item.productName,
+      quantity: item.quantity,
+      unitPriceInCents: item.unitPriceInCents,
+    })),
+    totals: {
+      subtotalInCents: response.subtotalInCents,
+      discountInCents: response.discountInCents,
+      totalInCents: response.totalInCents,
+    },
+    paymentMethod: response.paymentMethod,
+    customer: response.customerCpf ? { cpf: response.customerCpf } : null,
+  }
+}
+
+/**
+ * Vendas registradas nesta sessão, para o painel reagir na hora.
+ * TODO (Parte 3): o painel passa a ler GET /api/sales e esta lista sai.
+ */
 export const sales: RegisteredSale[] = []
 let salesVersion = 0
 const salesListeners = new Set<() => void>()
@@ -122,27 +168,30 @@ export function resetSalesForTests() {
   emitSalesChanged()
 }
 
-export function registerSale(input: RegisterSaleInput) {
-  const stockValidation = validateSaleStock(input.items, products)
+/**
+ * Registra a venda no backend: ele confere o estoque, usa o preço do banco, calcula os
+ * totais, baixa o estoque e gera o número (V-0042). O frontend só manda o id e a quantidade.
+ */
+export async function registerSale(input: RegisterSaleInput) {
+  const response = await apiFetch<SaleResponse>("/api/sales", {
+    method: "POST",
+    body: JSON.stringify({
+      items: input.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+      discountInCents: input.totals.discountInCents,
+      paymentMethod: input.paymentMethod,
+      customerCpf: input.customer?.cpf ?? null,
+    }),
+  })
 
-  if (!stockValidation.valid) {
-    throw new Error(stockValidation.message)
-  }
-
-  for (const item of input.items) {
-    decreaseProductStock(item.productId, item.quantity)
-  }
-
-  const sale: RegisteredSale = {
-    ...input,
-    number: `V-${String(sales.length + 1).padStart(4, "0")}`,
-    date: input.date ?? new Date(),
-    items: input.items.map((item) => ({ ...item })),
-    totals: { ...input.totals },
-    customer: input.customer ? { ...input.customer } : null,
-  }
-
+  const sale = toRegisteredSale(response)
   sales.push(sale)
   emitSalesChanged()
+
+  // O backend baixou o estoque: recarrega para a busca e o painel mostrarem o saldo novo.
+  void loadProducts()
+
   return sale
 }
