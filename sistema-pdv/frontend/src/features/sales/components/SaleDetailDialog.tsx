@@ -151,6 +151,22 @@ export default function SaleDetailDialog({
               <dt>Total</dt>
               <dd className="font-mono">{formatMoney(sale.totalInCents)}</dd>
             </div>
+            {sale.cashReceivedInCents !== null ? (
+              <>
+                <div className="flex justify-between pt-1 text-neutral-600">
+                  <dt>Recebido em dinheiro</dt>
+                  <dd className="font-mono">
+                    {formatMoney(sale.cashReceivedInCents)}
+                  </dd>
+                </div>
+                <div className="flex justify-between text-neutral-600">
+                  <dt>Troco</dt>
+                  <dd className="font-mono">
+                    {formatMoney(sale.changeInCents ?? 0)}
+                  </dd>
+                </div>
+              </>
+            ) : null}
           </dl>
 
           {confirming ? (

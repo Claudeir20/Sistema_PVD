@@ -25,6 +25,7 @@ function sale(
     },
     paymentMethod: "PIX",
     customer: null,
+    changeInCents: null,
   }
 }
 

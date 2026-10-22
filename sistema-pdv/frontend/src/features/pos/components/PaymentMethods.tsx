@@ -2,6 +2,7 @@ import Button from "../../../components/ui/Button"
 import Card from "../../../components/ui/Card"
 import type { PaymentMethod } from "../../../domain/types"
 import type { PixPayment } from "../../../services/payments"
+import CashPayment from "./CashPayment"
 import PixPaymentStatus from "./PixPaymentStatus"
 
 const methods: Array<{ label: string; value: PaymentMethod }> = [
@@ -18,6 +19,9 @@ interface PaymentMethodsProps {
   pixPayment: PixPayment | null
   showPixPayment: boolean
   onChange: (method: PaymentMethod) => void
+  totalInCents: number
+  cashReceived: string
+  onCashReceivedChange: (value: string) => void
 }
 
 export default function PaymentMethods({
@@ -27,6 +31,9 @@ export default function PaymentMethods({
   pixPayment,
   showPixPayment,
   onChange,
+  totalInCents,
+  cashReceived,
+  onCashReceivedChange,
 }: PaymentMethodsProps) {
   return (
     <Card className="p-4">
@@ -45,6 +52,14 @@ export default function PaymentMethods({
           </Button>
         ))}
       </div>
+      {method === "CASH" ? (
+        <CashPayment
+          disabled={disabled}
+          onChange={onCashReceivedChange}
+          totalInCents={totalInCents}
+          value={cashReceived}
+        />
+      ) : null}
       {method === "PIX" ? (
         showPixPayment ? (
           <PixPaymentStatus loading={loadingPix} payment={pixPayment} />
