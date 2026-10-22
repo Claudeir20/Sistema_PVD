@@ -32,6 +32,10 @@ public class SaleItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    /** Cópia do nome no momento da venda: se o produto for renomeado, o recibo não muda. */
+    @Column(nullable = false, length = 120) // mesmo tamanho do nome no Product
+    private String productName;
+
     @Column(nullable = false)
     private int quantity;
 
@@ -48,6 +52,7 @@ public class SaleItem {
         this.id = UUID.randomUUID();
         this.sale = sale;
         this.product = product;
+        this.productName = product.getName();
         this.quantity = quantity;
         this.unitPriceInCents = unitPriceInCents;
         this.totalInCents = Math.multiplyExact(unitPriceInCents, (long) quantity);

@@ -18,6 +18,7 @@ CREATE TABLE sales (
     stock_movement_id         UUID                     NOT NULL,
     cancellation_movement_id  UUID,
     created_at                TIMESTAMP WITH TIME ZONE NOT NULL,
+    version                   BIGINT                   NOT NULL,
 
     CONSTRAINT uk_sales_number UNIQUE (number),
     CONSTRAINT uk_sales_stock_movement UNIQUE (stock_movement_id),
@@ -33,6 +34,7 @@ CREATE TABLE sale_items (
     id                   UUID    PRIMARY KEY,
     sale_id              UUID    NOT NULL,
     product_id           UUID    NOT NULL,
+    product_name         VARCHAR(120) NOT NULL,
     quantity             INTEGER NOT NULL,
     unit_price_in_cents  BIGINT  NOT NULL,
     total_in_cents       BIGINT  NOT NULL,
@@ -44,5 +46,6 @@ CREATE TABLE sale_items (
 );
 
 CREATE INDEX ix_sales_seller ON sales (seller_id);
+CREATE INDEX ix_sales_created_at ON sales (created_at);
 CREATE INDEX ix_sale_items_sale ON sale_items (sale_id);
 CREATE INDEX ix_sale_items_product ON sale_items (product_id);
