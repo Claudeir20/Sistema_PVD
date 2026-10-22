@@ -3,13 +3,13 @@ package dev.mota.sistema_pdv.config;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@Controller 
+@Controller
 
 public class SpaController {
 
-    @GetMapping({ "/login", "/painel", "/vender", "/produtos", "/os/**", "/acompanhar/**" })
-    public String index(){
+    @GetMapping({ "/login", "/painel", "/vender", "/produtos", "/usuarios", "/os/**", "/acompanhar/**" })
+    public String index() {
         return "forward:/index.html";
     }
-    
+
 }

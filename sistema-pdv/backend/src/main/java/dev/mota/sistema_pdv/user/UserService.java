@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import dev.mota.sistema_pdv.shared.error.ConflictException;
-import dev.mota.sistema_pdv.user.dto.ChangeRoleRequest;
 import dev.mota.sistema_pdv.user.dto.CreateUserRequest;
 import dev.mota.sistema_pdv.user.dto.UserResponse;
 import dev.mota.sistema_pdv.user.exception.EmailAlreadyExistsException;
@@ -87,7 +86,7 @@ public class UserService {
     public UserResponse deactivate(UUID id, String loggedEmail) {
         User user = getUser(id);
         if (user.getEmail().equals(loggedEmail)) {
-            throw new ConflictException("Você não pode desativar o própio usuário");
+            throw new ConflictException("Você não pode desativar o próprio usuário");
         }
         user.deactivate();
         return userMapper.toResponse(userRepository.saveAndFlush(user));
