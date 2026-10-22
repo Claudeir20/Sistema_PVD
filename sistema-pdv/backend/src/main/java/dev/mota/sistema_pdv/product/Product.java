@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 
-
 @Entity
 @Table(name = "products")
 @Getter
@@ -42,7 +41,6 @@ public class Product {
     @Column(nullable = false)
     private boolean active;
 
-
     @Version
     private Long version;
 
@@ -51,7 +49,6 @@ public class Product {
 
     @Column(nullable = false)
     private Instant updatedAt;
-
 
     protected Product() {
     }
@@ -74,7 +71,6 @@ public class Product {
                 validMinStock(minStock));
     }
 
-
     public void updateDetails(String name, long priceInCents, int minStock) {
         String newName = validName(name);
         long newPrice = validPrice(priceInCents);
@@ -85,13 +81,11 @@ public class Product {
         this.minStock = newMinStock;
     }
 
-
     public void restock(int quantity) {
         requireActive();
         requirePositiveQuantity(quantity);
         this.stockQuantity = Math.addExact(this.stockQuantity, quantity);
     }
-
 
     public void decreaseStock(int quantity) {
         requireActive();
@@ -111,11 +105,9 @@ public class Product {
         this.stockQuantity = quantity;
     }
 
-
     public boolean isBelowMinStock() {
         return stockQuantity <= minStock;
     }
-
 
     public void archive() {
         if (!active) {
@@ -129,6 +121,11 @@ public class Product {
             throw new ConflictException("Este produto já está ativo.");
         }
         this.active = true;
+    }
+
+    public void returnStock(int quantity) {
+        requirePositiveQuantity(quantity);
+        this.stockQuantity = Math.addExact(this.stockQuantity, quantity);
     }
 
     @PrePersist
@@ -196,7 +193,9 @@ public class Product {
         return minStock;
     }
 
-    /** Dois objetos são o mesmo produto quando têm o mesmo id (gerado na criação). */
+    /**
+     * Dois objetos são o mesmo produto quando têm o mesmo id (gerado na criação).
+     */
     @Override
     public boolean equals(Object other) {
         return this == other || (other instanceof Product product && id.equals(product.id));
