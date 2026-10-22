@@ -1,6 +1,5 @@
 package dev.mota.sistema_pdv.movements;
 
-
 import dev.mota.sistema_pdv.product.Product;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -28,14 +27,11 @@ public class StockMovement {
 
     private String observation;
 
-    @OneToMany(
-            mappedBy = "movement",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "movement", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MovementItems> items = new ArrayList<>();
 
-    protected StockMovement() {}
+    protected StockMovement() {
+    }
 
     private StockMovement(StockMovementType type, String observation) {
         this.id = UUID.randomUUID();
@@ -66,7 +62,8 @@ public class StockMovement {
             throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
         }
 
-        // switch como expressão: se um tipo novo for criado e não for tratado aqui, não compila
+        // switch como expressão: se um tipo novo for criado e não for tratado aqui, não
+        // compila
         int signedQuantity = switch (type) {
             case ENTRY -> {
                 product.restock(quantity);
@@ -78,11 +75,14 @@ public class StockMovement {
             }
             case ADJUSTMENT -> throw new IllegalArgumentException(
                     "Em uma movimentação de ajuste, informe a quantidade contada.");
+            case SALE -> {
+                product.decreaseStock(quantity);
+                yield -quantity;
+            }
         };
 
         items.add(MovementItems.create(this, product, signedQuantity, product.getStockQuantity()));
     }
-
 
     public void addCountedProduct(Product product, int countedQuantity) {
         if (type != StockMovementType.ADJUSTMENT) {
