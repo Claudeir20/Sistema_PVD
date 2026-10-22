@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest"
-import type { DashboardServiceOrder } from "../../services/serviceOrders"
 import type { RegisteredSale } from "../../services/sales"
 import {
   calculateDashboardMetrics,
@@ -36,18 +35,12 @@ const sales = [
   sale("V-4", "2026-02-28T12:00:00", 9000),
 ]
 
-const orders: DashboardServiceOrder[] = [
-  { id: "1", device: "A", status: "DIAGNOSIS" },
-  { id: "2", device: "B", status: "DELIVERED" },
-]
-
 describe("dashboard calculations", () => {
   it("calculates today's metrics and average ticket in cents", () => {
-    expect(calculateDashboardMetrics(sales, orders, "TODAY", now)).toEqual({
+    expect(calculateDashboardMetrics(sales, "TODAY", now)).toEqual({
       revenueInCents: 4000,
       salesCount: 2,
       averageTicketInCents: 2000,
-      openServiceOrders: 1,
     })
   })
 

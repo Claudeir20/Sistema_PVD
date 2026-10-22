@@ -1,6 +1,6 @@
 import { apiFetch } from "./api"
 
-export type Role = "ADMIN" | "CAIXA" | "TECNICO"
+export type Role = "ADMIN" | "CAIXA"
 
 export interface AuthUser {
   id: string
@@ -34,5 +34,4 @@ export function logout() {
 export const roleLabels: Record<Role, string> = {
   ADMIN: "Administrador",
   CAIXA: "Caixa",
-  TECNICO: "Técnico",
 }

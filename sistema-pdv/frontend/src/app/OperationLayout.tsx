@@ -4,7 +4,6 @@ import UserMenu from "../features/auth/UserMenu"
 
 const navigation = [
   { label: "Vender", to: "/vender" },
-  { label: "Ordens de serviço", to: "/os/1" },
   { label: "Painel", to: "/painel", adminOnly: true },
 ]
 

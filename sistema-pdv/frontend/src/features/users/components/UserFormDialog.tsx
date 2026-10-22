@@ -124,7 +124,6 @@ export default function UserFormDialog({
 const roleDescriptions: Record<Role, string> = {
   ADMIN: "Tudo: produtos, usuários, painel e cancelamentos.",
   CAIXA: "Vende no PDV e registra reposição.",
-  TECNICO: "Ordens de serviço; só consulta produtos.",
 }
 
 /** Escolha do perfil com a explicação de cada um (usado no cadastro e na troca). */

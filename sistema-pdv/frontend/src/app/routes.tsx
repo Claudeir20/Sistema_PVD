@@ -5,14 +5,10 @@ import SalesPage from "../features/sales/SalesPage"
 import StockPage from "../features/stock/StockPage"
 import UsersPage from "../features/users/UsersPage"
 import RequireAuth from "../features/auth/RequireAuth"
-import CustomerTrackingPage from "../features/customer-portal/pages/CustomerTrackingPage"
 import DashboardPage from "../features/dashboard/DashboardPage"
 import PosPage from "../features/pos/PosPage"
-import ServiceOrderPage from "../features/service-orders/ServiceOrderPage"
 import AdminLayout from "./AdminLayout"
-import DevIndexPage from "./DevIndexPage"
 import OperationLayout from "./OperationLayout"
-import PublicLayout from "./PublicLayout"
 
 export const router = createBrowserRouter([
   {
@@ -55,31 +51,16 @@ export const router = createBrowserRouter([
         path: "/vender",
         element: <PosPage key="pos-sale-hooks-v2" />,
       },
-      {
-        path: "/os/:id",
-        element: <ServiceOrderPage key="service-order-detail-v1" />,
-      },
-    ],
-  },
-  {
-    element: <PublicLayout />,
-    children: [
-      {
-        path: "/acompanhar/:token",
-        element: <CustomerTrackingPage />,
-      },
     ],
   },
   {
     path: "/login",
     element: <LoginPage />,
   },
-  {
-    path: "/",
-    element: <DevIndexPage />,
-  },
+  // A raiz e qualquer endereço desconhecido vão para o login, que manda quem já está
+  // logado para a tela certa do perfil (painel ou PDV).
   {
     path: "*",
-    element: <Navigate to="/acompanhar/os-0001-demo" replace />,
+    element: <Navigate to="/login" replace />,
   },
 ])

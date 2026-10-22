@@ -6,7 +6,6 @@ import { formatMoney } from "../../domain/formatters"
 import { useAuth } from "../auth/AuthContext"
 import useProducts from "../products/useProducts"
 import { accountsPayable } from "../../services/accountsPayable"
-import { serviceOrders } from "../../services/serviceOrders"
 import {
   calculateDashboardMetrics,
   getGreeting,
@@ -16,7 +15,6 @@ import {
 import LowStockList from "./components/LowStockList"
 import PeriodFilter from "./components/PeriodFilter"
 import SalesByDayChart from "./components/SalesByDayChart"
-import ServiceOrdersByStatus from "./components/ServiceOrdersByStatus"
 import UpcomingPayables from "./components/UpcomingPayables"
 import useSalesByPeriod from "./hooks/useSalesByPeriod"
 
@@ -39,7 +37,7 @@ export default function DashboardPage() {
     error: salesError,
     retry: retrySales,
   } = useSalesByPeriod(period, now)
-  const metrics = calculateDashboardMetrics(sales, serviceOrders, period, now)
+  const metrics = calculateDashboardMetrics(sales, period, now)
   const dailySales = groupSalesByDay(sales, period, now)
 
   return (
@@ -47,7 +45,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-[1400px]">
         <PageHeader
           actions={<PeriodFilter onChange={setPeriod} value={period} />}
-          description="Acompanhe as vendas, ordens de serviço e compromissos da loja."
+          description="Acompanhe as vendas, o estoque e os compromissos da loja."
           title={`${getGreeting(now.getHours())}, ${firstName}`}
         />
 
@@ -90,12 +88,19 @@ export default function DashboardPage() {
             label="Ticket médio"
             value={formatMoney(metrics.averageTicketInCents)}
           />
-          <MetricCard label="OS em aberto" value={metrics.openServiceOrders} />
+          <MetricCard
+            helper="produtos para repor"
+            label="Abaixo do mínimo"
+            // Mesma regra do backend (Product.isBelowMinStock): no mínimo já pede reposição.
+            value={
+              products.filter((product) => product.stock <= product.minStock)
+                .length
+            }
+          />
         </section>
 
-        <section className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.9fr)]">
+        <section className="mt-5">
           <SalesByDayChart data={dailySales} />
-          <ServiceOrdersByStatus orders={serviceOrders} />
         </section>
 
         <section className="mt-5 grid gap-5 xl:grid-cols-2">

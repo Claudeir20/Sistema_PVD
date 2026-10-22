@@ -27,7 +27,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "CAIXA", "TECNICO")
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers(HttpMethod.POST, "/api/products/*/restock").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers(HttpMethod.POST, "/api/sales/*/cancel").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/sales").hasRole("ADMIN")
