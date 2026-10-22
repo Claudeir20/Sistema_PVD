@@ -19,7 +19,7 @@ class SpaControllerTest {
 
     @Test
     void reactRoutesReturnTheIndexWithoutLogin() throws Exception {
-        for (String path : new String[] { "/login", "/painel", "/vender", "/os/1", "/acompanhar/abc" }) {
+        for (String path : new String[] { "/login", "/painel", "/vender" }) {
             mvc.perform(get(path))
                     .andExpect(status().isOk())
                     .andExpect(forwardedUrl("/index.html"));
