@@ -6,6 +6,33 @@ export function formatMoney(valueInCents: number) {
   }).format(valueInCents / 100)
 }
 
+/**
+ * Valor digitado em reais → centavos. Aceita "29,90", "29.90", "1.234,56" e "29".
+ * Com vírgula, ela é o decimal e os pontos são milhar; sem vírgula, um ponto
+ * seguido de 1 ou 2 dígitos no fim é o decimal. Inválido ou negativo vira null.
+ */
+export function parseMoneyToCents(value: string): number | null {
+  const text = value.trim().replace(/^R\$\s*/, "")
+  if (!text) return null
+
+  let normalized: string
+  if (text.includes(",")) {
+    normalized = text.replace(/\./g, "").replace(",", ".")
+  } else if (/\.\d{1,2}$/.test(text)) {
+    normalized = text.replace(/\.(?=.*\.)/g, "")
+  } else {
+    normalized = text.replace(/\./g, "")
+  }
+
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null
+  return Math.round(Number(normalized) * 100)
+}
+
+/** Centavos → texto para preencher um campo de valor: 2990 → "29,90". */
+export function centsToInput(valueInCents: number) {
+  return (valueInCents / 100).toFixed(2).replace(".", ",")
+}
+
 type DateValue = Date | string | number
 
 function parseDate(value: DateValue) {

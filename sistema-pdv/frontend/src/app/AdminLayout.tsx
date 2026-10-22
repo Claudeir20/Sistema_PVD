@@ -4,6 +4,7 @@ import UserMenu from "../features/auth/UserMenu"
 const navigation = [
   { label: "Painel", to: "/painel" },
   { label: "Vender (PDV)", to: "/vender" },
+  { label: "Produtos", to: "/produtos" },
   { label: "Ordens de serviço", to: "/os/1" },
   { label: "Estoque", to: "/painel?area=estoque" },
   { label: "Financeiro", to: "/painel?area=financeiro" },
@@ -34,7 +35,7 @@ export default function AdminLayout() {
             <NavLink
               className={({ isActive }) =>
                 `block shrink-0 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive && item.to === "/painel"
+                  isActive && !item.to.includes("?")
                     ? "bg-neutral-900 text-white"
                     : "text-neutral-700 hover:bg-neutral-100"
                 }`

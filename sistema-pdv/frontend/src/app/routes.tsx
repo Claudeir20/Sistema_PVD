@@ -1,5 +1,6 @@
 import { Navigate, createBrowserRouter } from "react-router-dom"
 import LoginPage from "../features/auth/LoginPage"
+import ProductsPage from "../features/products/ProductsPage"
 import RequireAuth from "../features/auth/RequireAuth"
 import CustomerTrackingPage from "../features/customer-portal/pages/CustomerTrackingPage"
 import DashboardPage from "../features/dashboard/DashboardPage"
@@ -21,6 +22,10 @@ export const router = createBrowserRouter([
       {
         path: "/painel",
         element: <DashboardPage key="dashboard-live-updates-v2" />,
+      },
+      {
+        path: "/produtos",
+        element: <ProductsPage />,
       },
     ],
   },

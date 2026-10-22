@@ -123,3 +123,69 @@ export function resetProductsForTests(initialProducts: Product[] = []) {
   pendingLoad = null
   emitProductsChanged()
 }
+
+// --- Cadastro de produtos (tela do admin) ---
+
+export interface ProductFormData {
+  barcode: string
+  name: string
+  priceInCents: number
+  minStock: number
+}
+
+export type StockMovementType =
+  "ENTRY" | "EXIT" | "ADJUSTMENT" | "SALE" | "SALE_CANCELLATION"
+
+/** Uma linha do histórico de estoque (GET /api/products/{id}/movements). */
+export interface ProductMovement {
+  movementId: string
+  type: StockMovementType
+  date: string
+  observation: string | null
+  quantity: number
+  balanceAfter: number
+}
+
+/**
+ * A tela do admin trabalha com a resposta completa (precisa da version para editar).
+ * Depois de cada mudança, recarrega também o cache do PDV.
+ */
+export function fetchProductResponses() {
+  return apiFetch<ProductResponse[]>("/api/products")
+}
+
+export async function createProduct(data: ProductFormData) {
+  const created = await apiFetch<ProductResponse>("/api/products", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+  void loadProducts()
+  return created
+}
+
+/** O código de barras não muda; a version evita sobrescrever a edição de outra pessoa. */
+export async function updateProduct(
+  productId: string,
+  data: Omit<ProductFormData, "barcode">,
+  version: number,
+) {
+  const updated = await apiFetch<ProductResponse>(
+    `/api/products/${productId}`,
+    { method: "PUT", body: JSON.stringify({ ...data, version }) },
+  )
+  void loadProducts()
+  return updated
+}
+
+export async function archiveProduct(productId: string) {
+  const archived = await apiFetch<ProductResponse>(
+    `/api/products/${productId}/archive`,
+    { method: "POST" },
+  )
+  void loadProducts()
+  return archived
+}
+
+export function fetchProductMovements(productId: string) {
+  return apiFetch<ProductMovement[]>(`/api/products/${productId}/movements`)
+}
