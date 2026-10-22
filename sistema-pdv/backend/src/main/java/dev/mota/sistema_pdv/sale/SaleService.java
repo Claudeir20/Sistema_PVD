@@ -57,6 +57,7 @@ public class SaleService {
 
         // Depois dos itens: o desconto é conferido contra o subtotal já calculado.
         sale.applyDiscount(request.discountInCents());
+        sale.registerPayment(request.cashReceivedInCents());
         sale.requireItems();
 
         return saleMapper.toResponse(saleRepository.saveAndFlush(sale));

@@ -66,6 +66,8 @@ public class Sale {
     @Column(nullable = false)
     private long discountInCents;
 
+    private Long cashReceivedInCents;
+
     @Column(nullable = false)
     private long totalInCents;
 
@@ -213,6 +215,27 @@ public class Sale {
     /** V-0042: o número como aparece para o cliente e no caixa. */
     public String getFormattedNumber() {
         return "V-%04d".formatted(number);
+    }
+
+    public void registerPayment(Long cashReceivedInCents) {
+        requireNotCanceled();
+        if (paymentMethod != PaymentMethod.CASH) {
+            if (cashReceivedInCents != null) {
+                throw new IllegalArgumentException("O valor recebido só vale para pagamento em dinheiro.");
+            }
+            return;
+        }
+        if (cashReceivedInCents == null) {
+            throw new IllegalArgumentException("Informe o valor recebido em dinheiro.");
+        }
+        if (cashReceivedInCents < totalInCents) {
+            throw new IllegalArgumentException("O valor recebido é menor que o total da venda.");
+        }
+        this.cashReceivedInCents = cashReceivedInCents;
+    }
+
+    public Long getChangeInCents() {
+        return cashReceivedInCents == null ? null : cashReceivedInCents - totalInCents;
     }
 
     private void recalculateTotals() {
