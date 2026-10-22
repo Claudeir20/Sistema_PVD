@@ -1,6 +1,3 @@
-import type { ServiceOrderStatus } from "../../domain/serviceOrderStatus"
-import type { DashboardServiceOrder } from "../../services/serviceOrders"
-
 /** O que o painel precisa de uma venda (serve para SaleSummary e RegisteredSale). */
 export interface DashboardSale {
   date: Date
@@ -13,7 +10,6 @@ export interface DashboardMetrics {
   revenueInCents: number
   salesCount: number
   averageTicketInCents: number
-  openServiceOrders: number
 }
 
 function startOfDay(date: Date) {
@@ -50,7 +46,6 @@ export function filterSalesByPeriod(
 
 export function calculateDashboardMetrics(
   sales: readonly DashboardSale[],
-  serviceOrders: readonly DashboardServiceOrder[],
   period: DashboardPeriod,
   now = new Date(),
 ): DashboardMetrics {
@@ -67,9 +62,6 @@ export function calculateDashboardMetrics(
       periodSales.length > 0
         ? Math.round(revenueInCents / periodSales.length)
         : 0,
-    openServiceOrders: serviceOrders.filter(
-      (order) => order.status !== "DELIVERED",
-    ).length,
   }
 }
 
@@ -104,18 +96,6 @@ export function getLocalDateKey(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, "0")
   const day = String(date.getDate()).padStart(2, "0")
   return `${year}-${month}-${day}`
-}
-
-export function countServiceOrdersByStatus(
-  serviceOrders: readonly DashboardServiceOrder[],
-) {
-  return serviceOrders.reduce<Partial<Record<ServiceOrderStatus, number>>>(
-    (totals, order) => {
-      totals[order.status] = (totals[order.status] ?? 0) + 1
-      return totals
-    },
-    {},
-  )
 }
 
 export function getGreeting(hour: number) {

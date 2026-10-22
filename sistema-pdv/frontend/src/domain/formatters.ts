@@ -53,24 +53,3 @@ export function formatShortDate(value: DateValue) {
     month: "2-digit",
   }).format(parseDate(value))
 }
-
-export function formatPhone(value: string) {
-  let digits = value.replace(/\D/g, "")
-
-  if (
-    digits.startsWith("55") &&
-    (digits.length === 12 || digits.length === 13)
-  ) {
-    digits = digits.slice(2)
-  }
-
-  if (digits.length === 11) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-  }
-
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  }
-
-  return value
-}
