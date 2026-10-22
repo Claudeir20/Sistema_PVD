@@ -166,16 +166,16 @@ public class Sale {
      * movimentação de entrada,
      * que fica registrada junto da venda.
      */
-    public void cancel(StockMovement returnMovement) {
+    public void cancel(StockMovement cancellationMovement) {
         requireNotCanceled();
-        if (returnMovement == null || returnMovement.getType() != StockMovementType.ENTRY) {
-            throw new IllegalArgumentException("O cancelamento precisa de uma movimentação de entrada.");
+        if (cancellationMovement == null || cancellationMovement.getType() != StockMovementType.SALE_CANCELLATION) {
+            throw new IllegalArgumentException("O cancelamento precisa de uma movimentação de cancelamneto de venda.");
         }
 
         for (SaleItem item : items) {
-            returnMovement.addProduct(item.getProduct(), item.getQuantity());
+            cancellationMovement.addProduct(item.getProduct(), item.getQuantity());
         }
-        this.cancellationMovement = returnMovement;
+        this.cancellationMovement = cancellationMovement;
         this.status = SaleStatus.CANCELED;
     }
 

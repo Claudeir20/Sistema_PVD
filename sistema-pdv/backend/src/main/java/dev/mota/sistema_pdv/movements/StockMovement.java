@@ -80,7 +80,7 @@ public class StockMovement {
                 yield -quantity;
             }
             case SALE_CANCELLATION -> {
-                product.restock(quantity);
+                product.returnStock(quantity);
                 yield quantity;
             }
         };
@@ -101,9 +101,7 @@ public class StockMovement {
         items.add(MovementItems.create(this, product, difference, product.getStockQuantity()));
     }
 
-    public void returnStock(int quantity){
-        required
-    }
+
 
     public List<MovementItems> getItems() {
         return Collections.unmodifiableList(items);
