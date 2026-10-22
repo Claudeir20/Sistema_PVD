@@ -169,7 +169,7 @@ public class Sale {
     public void cancel(StockMovement cancellationMovement) {
         requireNotCanceled();
         if (cancellationMovement == null || cancellationMovement.getType() != StockMovementType.SALE_CANCELLATION) {
-            throw new IllegalArgumentException("O cancelamento precisa de uma movimentação de cancelamneto de venda.");
+            throw new IllegalArgumentException("O cancelamento precisa de uma movimentação de cancelamento de venda.");
         }
 
         for (SaleItem item : items) {
