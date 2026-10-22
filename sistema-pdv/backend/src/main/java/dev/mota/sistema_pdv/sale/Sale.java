@@ -96,8 +96,10 @@ public class Sale {
     private Instant createdAt;
 
     /**
-     * Protege contra duas pessoas cancelando a mesma venda ao mesmo tempo. Também faz o
-     * save() reconhecer a venda nova (version ainda nula) e usar persist em vez de merge.
+     * Protege contra duas pessoas cancelando a mesma venda ao mesmo tempo. Também
+     * faz o
+     * save() reconhecer a venda nova (version ainda nula) e usar persist em vez de
+     * merge.
      */
     @Version
     private Long version;
@@ -195,17 +197,22 @@ public class Sale {
         }
     }
 
-    /** V-0042: o número como aparece para o cliente e no caixa. */
-    public String getFormattedNumber() {
-        return "V-%04d".formatted(number);
-    }
-
     public boolean isCanceled() {
         return status == SaleStatus.CANCELED;
     }
 
     public List<SaleItem> getItems() {
         return Collections.unmodifiableList(items);
+    }
+
+    /** V-0042: o número como aparece para o cliente e no caixa. */
+    public static String formatNumber(long number) {
+        return "V-%04d".formatted(number);
+    }
+
+    /** V-0042: o número como aparece para o cliente e no caixa. */
+    public String getFormattedNumber() {
+        return "V-%04d".formatted(number);
     }
 
     private void recalculateTotals() {
