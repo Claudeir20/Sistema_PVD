@@ -116,10 +116,6 @@ export default function PosPage() {
               ? "Cancelar cobrança"
               : "Finalizar venda (F10)"}
         </Button>
-
-        <p className="text-center text-xs text-neutral-500">
-          NFC-e emitida em segundo plano após a venda
-        </p>
       </aside>
 
       <CustomerDialog
