@@ -60,8 +60,10 @@ public class UserController {
     }
 
     @PostMapping("/{id}/password")
-    public void changePasswordHash(@PathVariable UUID id, @Valid @RequestBody ResetPasswordRequest request) {
-        userService.changePasswordHash(request, id);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePasswordHash(@PathVariable UUID id, @Valid @RequestBody ResetPasswordRequest request,
+            Authentication authentication) {
+        userService.resetPassword(id, request, authentication.getName());
     }
 
 }

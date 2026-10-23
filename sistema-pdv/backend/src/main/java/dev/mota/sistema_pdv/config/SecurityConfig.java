@@ -31,7 +31,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/products/*/restock").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers(HttpMethod.POST, "/api/sales/*/cancel").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/sales").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/users/*/password").hasRole("ADMIN")
                         .requestMatchers("/api/sales/**").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers("/api/products/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")

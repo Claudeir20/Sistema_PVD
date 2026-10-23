@@ -77,15 +77,13 @@ public class UserService {
     }
 
     @Transactional
-    public void changePasswordHash(ResetPasswordRequest request, UUID userId) {
-
+    public void resetPassword(UUID userId, ResetPasswordRequest request, String loggedEmail) {
         User user = getUser(userId);
-
-        user.changePasswordHash(
-                passwordEncoder.encode(request.newPassword()));
-
+        if (user.getEmail().equals(loggedEmail)) {
+            throw new ConflictException("Para trocar a própria senha, use a opção Trocar minha senha.");
+        }
+        user.changePasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
-
     }
 
     @Transactional

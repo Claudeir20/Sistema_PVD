@@ -86,9 +86,6 @@ public class User {
     }
 
     public void changePasswordHash(String newHash) {
-        if (role != Role.ADMIN) {
-            throw new IllegalArgumentException("Apenas usuários ADMIN podem fazer está ação");
-        }
 
         validPasswordHash(newHash);
 
