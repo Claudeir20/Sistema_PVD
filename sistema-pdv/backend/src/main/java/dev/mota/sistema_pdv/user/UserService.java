@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import dev.mota.sistema_pdv.shared.error.ConflictException;
 import dev.mota.sistema_pdv.user.dto.CreateUserRequest;
+import dev.mota.sistema_pdv.user.dto.ResetPasswordRequest;
 import dev.mota.sistema_pdv.user.dto.UserResponse;
 import dev.mota.sistema_pdv.user.exception.EmailAlreadyExistsException;
 import dev.mota.sistema_pdv.user.exception.UserNotFoundException;
@@ -73,6 +74,18 @@ public class UserService {
     private boolean isEmailUniqueViolation(DataIntegrityViolationException exception) {
         String message = exception.getMostSpecificCause().getMessage();
         return message != null && message.toLowerCase(Locale.ROOT).contains("uk_users_email");
+    }
+
+    @Transactional
+    public void changePasswordHash(ResetPasswordRequest request, UUID userId) {
+
+        User user = getUser(userId);
+
+        user.changePasswordHash(
+                passwordEncoder.encode(request.newPassword()));
+
+        userRepository.save(user);
+
     }
 
     @Transactional

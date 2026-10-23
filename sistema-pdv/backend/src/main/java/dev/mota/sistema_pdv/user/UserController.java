@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.mota.sistema_pdv.user.dto.ChangeRoleRequest;
 import dev.mota.sistema_pdv.user.dto.CreateUserRequest;
+import dev.mota.sistema_pdv.user.dto.ResetPasswordRequest;
 import dev.mota.sistema_pdv.user.dto.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,11 @@ public class UserController {
     @PostMapping("/{id}/reactivate")
     public UserResponse reactivate(@PathVariable UUID id) {
         return userService.reactivate(id);
+    }
+
+    @PostMapping("/{id}/password")
+    public void changePasswordHash(@PathVariable UUID id, @Valid @RequestBody ResetPasswordRequest request) {
+        userService.changePasswordHash(request, id);
     }
 
 }
