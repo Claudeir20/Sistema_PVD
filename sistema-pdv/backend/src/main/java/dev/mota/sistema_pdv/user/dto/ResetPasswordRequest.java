@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public record ResetPasswordRequest(
         @NotBlank (message = "Informe a nova senha")
-        @Size(min = 8, max = 72,  message = "A senha deve ter de 6 a 72 caracteres.") 
+        @Size(min = 6, max = 72,  message = "A senha deve ter de 6 a 72 caracteres.") 
         String newPassword) {
 
 }
