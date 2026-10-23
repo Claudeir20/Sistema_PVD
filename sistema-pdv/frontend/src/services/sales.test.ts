@@ -51,6 +51,8 @@ const createdSale: SaleResponse = {
   subtotalInCents: 5980,
   discountInCents: 500,
   totalInCents: 5480,
+  cashReceivedInCents: null,
+  changeInCents: null,
   customerCpf: "52998224725",
   sellerName: "Maria",
   createdAt: "2026-10-22T13:00:00Z",
@@ -103,6 +105,7 @@ describe("registerSale", () => {
       discountInCents: 500,
       paymentMethod: "PIX",
       customerCpf: "52998224725",
+      cashReceivedInCents: null,
     })
   })
 
@@ -121,6 +124,37 @@ describe("registerSale", () => {
       },
       customer: { cpf: "52998224725" },
     })
+  })
+
+  it("sends the cash received and returns the change from the backend", async () => {
+    const fetchMock = mockFetch(201, {
+      ...createdSale,
+      paymentMethod: "CASH",
+      cashReceivedInCents: 10000,
+      changeInCents: 4520,
+    })
+
+    const sale = await registerSale({
+      ...input,
+      paymentMethod: "CASH",
+      cashReceivedInCents: 10000,
+    })
+
+    const options = fetchMock.mock.calls[0][1] as RequestInit
+    expect(JSON.parse(options.body as string)).toMatchObject({
+      paymentMethod: "CASH",
+      cashReceivedInCents: 10000,
+    })
+    expect(sale.changeInCents).toBe(4520)
+  })
+
+  it("never sends a cash amount for Pix or card", async () => {
+    const fetchMock = mockFetch(201, createdSale)
+
+    await registerSale({ ...input, cashReceivedInCents: 10000 })
+
+    const options = fetchMock.mock.calls[0][1] as RequestInit
+    expect(JSON.parse(options.body as string).cashReceivedInCents).toBeNull()
   })
 
   it("sends null when there is no customer", async () => {

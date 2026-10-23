@@ -91,8 +91,11 @@ export default function PosPage() {
           disabled={sale.saleLocked}
           loadingPix={sale.loadingPix}
           method={sale.paymentMethod}
+          cashReceived={sale.cashReceived}
+          onCashReceivedChange={sale.setCashReceived}
           onChange={sale.setPaymentMethod}
           pixPayment={sale.pixPayment}
+          totalInCents={sale.totals.totalInCents}
           showPixPayment={sale.saleLocked}
         />
 

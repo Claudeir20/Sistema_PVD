@@ -16,6 +16,9 @@ public record CreateSaleRequest(
         @PositiveOrZero(message = "O desconto não pode ser negativo.")
         Long discountInCents,
 
+        @PositiveOrZero (message = "O valor não pode ser negativo")
+        Long cashReceivedInCents,
+
         @NotNull(message = "Informe a forma de pagamento.")
         PaymentMethod paymentMethod,
 

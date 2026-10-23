@@ -19,6 +19,8 @@ import {
   removeCartItem,
   type CartItem,
 } from "../cart"
+import { formatMoney, parseMoneyToCents } from "../../../domain/formatters"
+import { checkCashReceived } from "../cashPayment"
 import {
   isSaleLocked,
   transitionSaleStatus,
@@ -38,6 +40,8 @@ export default function usePosSale() {
   const [discountInCents, setDiscountInCents] = useState(0)
   const [customer, setCustomer] = useState<PosCustomer | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PIX")
+  // Texto do "Valor recebido" (só em dinheiro). Fica guardado ao trocar de forma.
+  const [cashReceived, setCashReceived] = useState("")
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false)
   const [discountDialogOpen, setDiscountDialogOpen] = useState(false)
   const [saleStatus, setSaleStatus] = useState<SaleStatus>("EDITING")
@@ -51,9 +55,14 @@ export default function usePosSale() {
     () => calculateCartTotals(cart, discountInCents),
     [cart, discountInCents],
   )
+  const cashReceivedInCents = parseMoneyToCents(cashReceived)
+  // Em dinheiro, só finaliza com o valor recebido informado e suficiente.
+  const cashIsOk =
+    paymentMethod !== "CASH" ||
+    checkCashReceived(totals.totalInCents, cashReceivedInCents).status === "OK"
   const canFinish = useMemo(
-    () => !submitting && canFinalizeSale(cart, discountInCents),
-    [cart, discountInCents, submitting],
+    () => !submitting && cashIsOk && canFinalizeSale(cart, discountInCents),
+    [cart, discountInCents, submitting, cashIsOk],
   )
   const saleItems: RegisterSaleItem[] = cart.map((item) => ({
     productId: item.product.id,
@@ -88,14 +97,21 @@ export default function usePosSale() {
           totals,
           paymentMethod,
           customer,
+          cashReceivedInCents,
         })
 
         setSaleStatus((current) => transitionSaleStatus(current, event))
         setCart([])
         setDiscountInCents(0)
         setCustomer(null)
+        setCashReceived("")
         setLoadingPix(false)
-        setNotice(`Venda concluída — ${sale.number}`)
+        // O troco vem do backend: é o valor que ficou gravado na venda.
+        setNotice(
+          sale.changeInCents !== null
+            ? `Venda concluída — ${sale.number} · Troco ${formatMoney(sale.changeInCents)}`
+            : `Venda concluída — ${sale.number}`,
+        )
         focusSearch()
       } catch (error) {
         const message =
@@ -123,7 +139,14 @@ export default function usePosSale() {
         setSubmitting(false)
       }
     },
-    [customer, focusSearch, paymentMethod, saleItems, totals],
+    [
+      cashReceivedInCents,
+      customer,
+      focusSearch,
+      paymentMethod,
+      saleItems,
+      totals,
+    ],
   )
 
   const finishSale = useCallback(() => {
@@ -267,6 +290,8 @@ export default function usePosSale() {
     setCustomerDialogOpen,
     setDiscountDialogOpen,
     setPaymentMethod,
+    cashReceived,
+    setCashReceived,
     setQuantity,
     totals,
   }

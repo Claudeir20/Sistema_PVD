@@ -15,11 +15,15 @@ export interface RegisterSaleInput {
   totals: CartTotals
   paymentMethod: PaymentMethod
   customer: PosCustomer | null
+  /** Só em dinheiro: quanto o cliente entregou (centavos). */
+  cashReceivedInCents?: number | null
 }
 
 export interface RegisteredSale extends RegisterSaleInput {
   number: string
   date: Date
+  /** Troco devolvido; null quando não foi em dinheiro. */
+  changeInCents: number | null
 }
 
 /** O que POST /api/sales devolve (SaleResponse do backend). */
@@ -31,6 +35,8 @@ export interface SaleResponse {
   subtotalInCents: number
   discountInCents: number
   totalInCents: number
+  cashReceivedInCents: number | null
+  changeInCents: number | null
   customerCpf: string | null
   sellerName: string
   createdAt: string
@@ -61,6 +67,8 @@ export function toRegisteredSale(response: SaleResponse): RegisteredSale {
     },
     paymentMethod: response.paymentMethod,
     customer: response.customerCpf ? { cpf: response.customerCpf } : null,
+    cashReceivedInCents: response.cashReceivedInCents,
+    changeInCents: response.changeInCents,
   }
 }
 
@@ -173,6 +181,11 @@ export async function registerSale(input: RegisterSaleInput) {
       discountInCents: input.totals.discountInCents,
       paymentMethod: input.paymentMethod,
       customerCpf: input.customer?.cpf ?? null,
+      // O backend recusa valor recebido em Pix/cartão: só manda em dinheiro.
+      cashReceivedInCents:
+        input.paymentMethod === "CASH"
+          ? (input.cashReceivedInCents ?? null)
+          : null,
     }),
   })
 

@@ -19,6 +19,8 @@ public class SaleMapper {
                                 sale.getSubtotalInCents(),
                                 sale.getDiscountInCents(),
                                 sale.getTotalInCents(),
+                                sale.getCashReceivedInCents(),
+                                sale.getChangeInCents(),
                                 sale.getCustomerCpf(),
                                 sale.getSeller().getName(),
                                 sale.getCreatedAt(),
