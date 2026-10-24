@@ -69,12 +69,14 @@ public class SaleService {
     }
 
     @Transactional
-    public SaleResponse cancel(UUID saleId) {
+    public SaleResponse cancel(UUID saleId, String reason, String canceledByEmail) {
         Sale sale = findSale(saleId);
+        User canceledBy = userRepository.findByEmail(canceledByEmail)
+                .orElseThrow(UserNotFoundException::new);
 
         StockMovement cancellation = StockMovement.create(
                 StockMovementType.SALE_CANCELLATION, "Cancelamento da venda " + sale.getFormattedNumber());
-        sale.cancel(cancellation);
+        sale.cancel(cancellation, canceledBy, reason);
 
         return saleMapper.toResponse(saleRepository.saveAndFlush(sale));
     }
