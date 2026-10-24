@@ -49,6 +49,7 @@ public class SecurityConfig {
 
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
+                        .deleteCookies("PVD_SESSION")
                         .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)))
 
                 .build();
