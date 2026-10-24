@@ -9,7 +9,9 @@ import RestockProductDialog from "../dashboard/components/RestockProductDialog"
 import {
   archiveProduct,
   createProduct,
+  fetchArchivedProducts,
   fetchProductResponses,
+  reactivateProduct,
   restockProduct,
   toProduct,
   updateProduct,
@@ -17,6 +19,7 @@ import {
   type ProductResponse,
 } from "../../services/products"
 import ArchiveProductDialog from "./components/ArchiveProductDialog"
+import ImportProductsDialog from "./components/ImportProductsDialog"
 import ProductFormDialog from "./components/ProductFormDialog"
 import ProductHistoryDialog from "./components/ProductHistoryDialog"
 
@@ -27,6 +30,10 @@ type OpenDialog =
   | { type: "RESTOCK"; product: ProductResponse }
   | { type: "HISTORY"; product: ProductResponse }
   | { type: "ARCHIVE"; product: ProductResponse }
+  | { type: "IMPORT" }
+
+/** Ativos aparecem no PDV; arquivados ficam guardados e podem voltar. */
+type View = "ACTIVE" | "ARCHIVED"
 
 /** Cadastro de produtos (só ADMIN). Cada ação chama a API e depois recarrega a lista. */
 export default function ProductsPage() {
@@ -36,13 +43,18 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("")
   const [dialog, setDialog] = useState<OpenDialog>({ type: "NONE" })
   const [notice, setNotice] = useState("")
+  const [view, setView] = useState<View>("ACTIVE")
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null)
 
   /** Busca a lista e devolve o resultado (para quem precisa do produto atualizado). */
   const reload = useCallback(async () => {
     setLoading(true)
     setLoadError("")
     try {
-      const result = await fetchProductResponses()
+      const result =
+        view === "ACTIVE"
+          ? await fetchProductResponses()
+          : await fetchArchivedProducts()
       setProducts(result)
       return result
     } catch (err) {
@@ -53,11 +65,34 @@ export default function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [view])
 
   useEffect(() => {
     void reload()
   }, [reload])
+
+  function changeView(next: View) {
+    if (next === view) return
+    setProducts([])
+    setNotice("")
+    setView(next)
+  }
+
+  async function reactivate(product: ProductResponse) {
+    setReactivatingId(product.id)
+    setNotice("")
+    try {
+      await reactivateProduct(product.id)
+      await reload()
+      setNotice(`${product.name} reativado: já aparece no PDV.`)
+    } catch (err) {
+      setNotice(
+        err instanceof Error ? err.message : "Não foi possível reativar.",
+      )
+    } finally {
+      setReactivatingId(null)
+    }
+  }
 
   // Filtra por nome ou código enquanto digita (a lista já está toda em memória).
   const visibleProducts = useMemo(() => {
@@ -122,18 +157,51 @@ export default function ProductsPage() {
       <div className="mx-auto max-w-[1400px]">
         <PageHeader
           actions={
-            <Button
-              onClick={() => setDialog({ type: "FORM", product: null })}
-              variant="primary"
-            >
-              Novo produto
-            </Button>
+            <>
+              <Button onClick={() => setDialog({ type: "IMPORT" })}>
+                Importar CSV
+              </Button>
+              <Button
+                onClick={() => setDialog({ type: "FORM", product: null })}
+                variant="primary"
+              >
+                Novo produto
+              </Button>
+            </>
           }
           description="Cadastre os produtos vendidos no PDV, ajuste preços e acompanhe o estoque."
           title="Produtos"
         />
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          aria-label="Quais produtos mostrar"
+          className="mt-6 inline-flex rounded-lg border border-neutral-300 bg-white p-1"
+          role="tablist"
+        >
+          {(
+            [
+              ["ACTIVE", "Ativos"],
+              ["ARCHIVED", "Arquivados"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              aria-selected={view === value}
+              className={`min-h-9 rounded-md px-4 text-sm font-semibold ${
+                view === value
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-600 hover:text-neutral-900"
+              }`}
+              key={value}
+              onClick={() => changeView(value)}
+              role="tab"
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <input
             aria-label="Buscar produto"
             className="h-11 w-full rounded-lg border border-neutral-300 bg-white px-3 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 sm:max-w-sm"
@@ -142,7 +210,8 @@ export default function ProductsPage() {
             value={search}
           />
           <p className="text-sm text-neutral-500">
-            {products.length} produto{products.length === 1 ? "" : "s"} ativo
+            {products.length} produto{products.length === 1 ? "" : "s"}{" "}
+            {view === "ACTIVE" ? "ativo" : "arquivado"}
             {products.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -191,29 +260,55 @@ export default function ProductsPage() {
                     {product.minStock}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1.5">
-                      <ActionButton
-                        onClick={() => setDialog({ type: "FORM", product })}
-                      >
-                        Editar
-                      </ActionButton>
-                      <ActionButton
-                        onClick={() => setDialog({ type: "RESTOCK", product })}
-                      >
-                        Repor
-                      </ActionButton>
-                      <ActionButton
-                        onClick={() => setDialog({ type: "HISTORY", product })}
-                      >
-                        Histórico
-                      </ActionButton>
-                      <ActionButton
-                        danger
-                        onClick={() => setDialog({ type: "ARCHIVE", product })}
-                      >
-                        Arquivar
-                      </ActionButton>
-                    </div>
+                    {view === "ARCHIVED" ? (
+                      <div className="flex justify-end gap-1.5">
+                        <ActionButton
+                          onClick={() =>
+                            setDialog({ type: "HISTORY", product })
+                          }
+                        >
+                          Histórico
+                        </ActionButton>
+                        <ActionButton
+                          disabled={reactivatingId !== null}
+                          onClick={() => void reactivate(product)}
+                        >
+                          {reactivatingId === product.id
+                            ? "Reativando..."
+                            : "Reativar"}
+                        </ActionButton>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end gap-1.5">
+                        <ActionButton
+                          onClick={() => setDialog({ type: "FORM", product })}
+                        >
+                          Editar
+                        </ActionButton>
+                        <ActionButton
+                          onClick={() =>
+                            setDialog({ type: "RESTOCK", product })
+                          }
+                        >
+                          Repor
+                        </ActionButton>
+                        <ActionButton
+                          onClick={() =>
+                            setDialog({ type: "HISTORY", product })
+                          }
+                        >
+                          Histórico
+                        </ActionButton>
+                        <ActionButton
+                          danger
+                          onClick={() =>
+                            setDialog({ type: "ARCHIVE", product })
+                          }
+                        >
+                          Arquivar
+                        </ActionButton>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -221,6 +316,7 @@ export default function ProductsPage() {
           </table>
 
           <TableStatus
+            archived={view === "ARCHIVED"}
             error={loadError}
             hasProducts={products.length > 0}
             hasResults={visibleProducts.length > 0}
@@ -256,6 +352,19 @@ export default function ProductsPage() {
         product={dialog.type === "HISTORY" ? dialog.product : null}
       />
 
+      <ImportProductsDialog
+        onClose={closeDialog}
+        onImported={(created, withInitialStock) => {
+          void finish(
+            `${created} produto${created === 1 ? "" : "s"} importado${created === 1 ? "" : "s"}` +
+              (withInitialStock > 0
+                ? `, ${withInitialStock} com estoque inicial.`
+                : "."),
+          )
+        }}
+        open={dialog.type === "IMPORT"}
+      />
+
       <ArchiveProductDialog
         onClose={closeDialog}
         onConfirm={async () => {
@@ -283,6 +392,7 @@ function ActionButton({
 }
 
 interface TableStatusProps {
+  archived: boolean
   loading: boolean
   error: string
   hasProducts: boolean
@@ -292,6 +402,7 @@ interface TableStatusProps {
 
 /** A mensagem embaixo da tabela: carregando, erro, nada cadastrado ou nada encontrado. */
 function TableStatus({
+  archived,
   loading,
   error,
   hasProducts,
@@ -316,6 +427,13 @@ function TableStatus({
     return (
       <p className="px-4 py-8 text-center text-sm text-neutral-500">
         Carregando produtos...
+      </p>
+    )
+  }
+  if (!hasProducts && archived) {
+    return (
+      <p className="px-4 py-8 text-center text-sm text-neutral-500">
+        Nenhum produto arquivado.
       </p>
     )
   }

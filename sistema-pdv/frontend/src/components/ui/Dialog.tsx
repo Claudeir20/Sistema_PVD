@@ -4,9 +4,11 @@ interface DialogProps extends PropsWithChildren {
   open: boolean
   title: string
   onClose: () => void
-  /** "md" para conteúdo com tabela (ex.: itens de uma venda). */
-  size?: "sm" | "md"
+  /** "md" para conteúdo com tabela (ex.: itens de uma venda); "lg" para tabelas largas. */
+  size?: "sm" | "md" | "lg"
 }
+
+const dialogWidths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-3xl" }
 
 export default function Dialog({
   open,
@@ -38,7 +40,7 @@ export default function Dialog({
       <div
         aria-labelledby="dialog-title"
         aria-modal="true"
-        className={`w-full ${size === "md" ? "max-w-lg" : "max-w-sm"} rounded-xl bg-white p-5 shadow-2xl`}
+        className={`w-full ${dialogWidths[size]} max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-xl bg-white p-5 shadow-2xl`}
         role="dialog"
       >
         <h2 id="dialog-title" className="text-lg font-bold text-[#292927]">

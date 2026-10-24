@@ -30,6 +30,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/archived").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers(HttpMethod.POST, "/api/products/*/restock").hasAnyRole("ADMIN", "CAIXA")
                         .requestMatchers(HttpMethod.POST, "/api/sales/*/cancel").hasRole("ADMIN")
@@ -51,9 +52,9 @@ public class SecurityConfig {
                                 "Você não tem permissão para acessar este recurso.")))
 
                 .sessionManagement(sessions -> sessions
-                        .maximumSessions(-1) // sem limite de sessões por usuário; só liga o controle
-                        .sessionRegistry(sessionRegistry)
-                        .expiredSessionStrategy(event -> writeError(event.getResponse(), 401,
+                        .maximumSessions(-1)
+                        .sessionRegistry(sessionRegistry())
+                        .expiredSessionStrategy(event -> writeError((event.getResponse()), 401,
                                 "Sua sessão foi encerrada. Entre de novo.")))
 
                 .logout(logout -> logout

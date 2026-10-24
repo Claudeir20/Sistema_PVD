@@ -1,6 +1,7 @@
 package dev.mota.sistema_pdv.shared.error;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import dev.mota.sistema_pdv.auth.exception.TooManyLoginAttemptsException;
+import dev.mota.sistema_pdv.product.exception.ImportValidationException;
 
 /**
  * Converte as exceções em respostas {"message": "..."} em português.
@@ -78,6 +80,14 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
                 .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    public record ImportErrorResponse(String message, List<ImportValidationException.LineError> errors) {
+    }
+
+    @ExceptionHandler(ImportValidationException.class)
+    public ResponseEntity<ImportErrorResponse> importErrors(ImportValidationException ex) {
+        return ResponseEntity.badRequest().body(new ImportErrorResponse(ex.getMessage(), ex.getErrors()));
     }
 
     private static ResponseEntity<ErrorResponse> error(HttpStatus status, String message) {

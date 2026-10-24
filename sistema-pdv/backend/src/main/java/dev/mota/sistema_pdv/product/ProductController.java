@@ -47,6 +47,11 @@ public class ProductController {
         return productService.archive(id);
     }
 
+    @GetMapping("/archived")
+    public List<ProductResponse> archived() {
+        return productService.findAllArchived();
+    }
+
     @PostMapping("/{id}/reactivate")
     public ProductResponse reactivate(@PathVariable UUID id) {
         return productService.reactivate(id);
@@ -65,5 +70,10 @@ public class ProductController {
     @GetMapping("/{id}/movements")
     public List<ProductMovementResponse> movements(@PathVariable UUID id) {
         return productService.findMovementOfProduct(id);
+    }
+
+    @PostMapping("/import")
+    public ImportProductsResponse imporAll(@Valid @RequestBody ImportProductsRequest request) {
+        return productService.importAll(request.products());
     }
 }
