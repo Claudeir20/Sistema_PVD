@@ -47,10 +47,6 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, e) -> writeError(response, 403,
                                 "Você não tem permissão para acessar este recurso.")))
 
-                .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)))
-
                 .build();
     }
 
