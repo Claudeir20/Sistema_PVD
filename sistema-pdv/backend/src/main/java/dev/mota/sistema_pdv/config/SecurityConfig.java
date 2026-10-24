@@ -47,6 +47,11 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, e) -> writeError(response, 403,
                                 "Você não tem permissão para acessar este recurso.")))
 
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .deleteCookies("PVD_SESSION")
+                        .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)))
+
                 .build();
     }
 
