@@ -64,7 +64,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductResponse> findAllArchived() {
-        return productRepository.findAllActiveFalseOrderByNameAsc().stream()
+        return productRepository.findAllByActiveFalseOrderByNameAsc().stream()
                 .map(productMapper::toResponse)
                 .toList();
     }

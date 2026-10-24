@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 public record ImportProductItem(
     int line,
 
-    @NotBlank (message =" Informe o código de barras.")
+    @NotBlank (message ="Informe o código de barras.")
     @Size (max = 50, message = "O Código de barras deve ter no máximo 50 caracteres")
     String barcode,
 
@@ -22,10 +22,10 @@ public record ImportProductItem(
     Long priceInCents,
 
     @NotNull (message = "Informe o estoque mínimo.")
-    @PositiveOrZero(message = "O ostoque mínimo não pode ser negativo.")
-    int minStock,
+    @PositiveOrZero(message = "O estoque mínimo não pode ser negativo.")
+    Integer minStock,
 
-    @PositiveOrZero (message = "O  estoque inicial não pode ser negativo")
+    @PositiveOrZero (message = "O estoque inicial não pode ser negativo")
     int initialStock
 ) {
     

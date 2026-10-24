@@ -31,7 +31,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             """)
     List<MovementItems> findHistoryOfProduct(UUID productId);
 
-    List<Product> findAllActiveFalseOrderByNameAsc();
+    List<Product> findAllByActiveFalseOrderByNameAsc();
 
     @Query("select p.barcode from Product p where p.barcode in :barcodes")
     Set<String> findExistingBarcodes(Collection<String> barcodes);
