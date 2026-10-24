@@ -67,10 +67,8 @@ public class AuthController {
         // (fixação de sessão).
         httpRequest.getSession(true);
         httpRequest.changeSessionId();
-        httpRequest.getSession();
-        httpRequest.changeSessionId();
-        sessionRegistry.registerNewSession(httpRequest.getSession().getId(),
-        authentication.getPrincipal());
+        // Registra a sessão para poder encerrá-la depois (desativar, mudar perfil, redefinir senha).
+        sessionRegistry.registerNewSession(httpRequest.getSession().getId(), authentication.getPrincipal());
 
         // 3. Lembrar: salva o usuário na sessão; é isso que o cookie passa a
         // representar.

@@ -51,9 +51,9 @@ public class SecurityConfig {
                                 "Você não tem permissão para acessar este recurso.")))
 
                 .sessionManagement(sessions -> sessions
-                        .maximumSessions(11)
-                        .sessionRegistry(sessionRegistry())
-                        .expiredSessionStrategy(event -> writeError((event.getResponse()), 401,
+                        .maximumSessions(-1) // sem limite de sessões por usuário; só liga o controle
+                        .sessionRegistry(sessionRegistry)
+                        .expiredSessionStrategy(event -> writeError(event.getResponse(), 401,
                                 "Sua sessão foi encerrada. Entre de novo.")))
 
                 .logout(logout -> logout

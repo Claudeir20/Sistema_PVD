@@ -82,7 +82,7 @@ public class UserService {
     public void resetPassword(UUID userId, ResetPasswordRequest request, String loggedEmail) {
         User user = getUser(userId);
         if (user.getEmail().equals(loggedEmail)) {
-            throw new ConflictException("Para trocar a própria senha, use a opção Trocar minha senha.");
+            throw new ConflictException("Não é possível redefinir a própria senha por aqui. Peça a outro administrador.");
         }
         user.changePasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
