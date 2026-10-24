@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -37,6 +38,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final SessionRegistry sessionRegistry;
 
     /**
      * Guarda "quem está logado" na sessão. Criado aqui, então não é injetado pelo
@@ -65,6 +67,8 @@ public class AuthController {
         // (fixação de sessão).
         httpRequest.getSession(true);
         httpRequest.changeSessionId();
+        // Registra a sessão para poder encerrá-la depois (desativar, mudar perfil, redefinir senha).
+        sessionRegistry.registerNewSession(httpRequest.getSession().getId(), authentication.getPrincipal());
 
         // 3. Lembrar: salva o usuário na sessão; é isso que o cookie passa a
         // representar.

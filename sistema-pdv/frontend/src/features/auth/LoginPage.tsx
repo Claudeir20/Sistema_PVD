@@ -6,7 +6,7 @@ import { ApiError } from "../../services/api"
 import { useAuth } from "./AuthContext"
 
 export default function LoginPage() {
-  const { user, loading, login } = useAuth()
+  const { user, loading, sessionExpired, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState("")
@@ -73,6 +73,15 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
             />
           </label>
+
+          {sessionExpired && !error && (
+            <p
+              role="status"
+              className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"
+            >
+              Sua sessão expirou. Entre de novo.
+            </p>
+          )}
 
           {error && (
             <p role="alert" className="text-sm text-[#b42318]">

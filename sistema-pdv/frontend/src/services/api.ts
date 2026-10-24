@@ -12,6 +12,19 @@ export class ApiError extends Error {
 export const SERVER_UNAVAILABLE_MESSAGE =
   "Servidor indisponível. Verifique se o backend está rodando."
 
+/**
+ * 401 nestas rotas é resposta normal (senha errada, ninguém logado ao abrir o app).
+ * Em qualquer outra, quer dizer que a sessão expirou com a tela aberta.
+ */
+const ROUTES_WITHOUT_SESSION = ["/api/auth/login", "/api/auth/me"]
+
+let sessionExpiredListener: (() => void) | null = null
+
+/** O AuthContext se registra aqui para voltar ao login quando a sessão expirar. */
+export function onSessionExpired(listener: (() => void) | null) {
+  sessionExpiredListener = listener
+}
+
 function readCookie(name: string): string | undefined {
   return document.cookie
     .split("; ")
@@ -47,6 +60,10 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 401 && !ROUTES_WITHOUT_SESSION.includes(path)) {
+      sessionExpiredListener?.()
+    }
+
     const body = await response.json().catch(() => null)
     if (body?.message) throw new ApiError(response.status, body.message)
 

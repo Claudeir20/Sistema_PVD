@@ -5,9 +5,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.context.annotation.Bean;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -21,7 +24,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
@@ -47,6 +50,12 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, e) -> writeError(response, 403,
                                 "Você não tem permissão para acessar este recurso.")))
 
+                .sessionManagement(sessions -> sessions
+                        .maximumSessions(-1) // sem limite de sessões por usuário; só liga o controle
+                        .sessionRegistry(sessionRegistry)
+                        .expiredSessionStrategy(event -> writeError(event.getResponse(), 401,
+                                "Sua sessão foi encerrada. Entre de novo.")))
+
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .deleteCookies("PVD_SESSION")
@@ -65,6 +74,16 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    @Bean
+    SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    static HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 
 }
