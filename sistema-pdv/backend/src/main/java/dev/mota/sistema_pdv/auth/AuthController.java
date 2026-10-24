@@ -3,11 +3,15 @@ package dev.mota.sistema_pdv.auth;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+
+import java.net.http.HttpRequest;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,14 +45,23 @@ public class AuthController {
      * construtor.
      */
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
+    private final LoginAttemptService loginAttemptService;
 
     @PostMapping("/login")
     public UserResponse login(@Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        // 1. Conferir: senha errada ou usuário desativado lançam
-        // AuthenticationException (vira 401).
-        Authentication authentication = authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
+
+        String ip = httpRequest.getRemoteAddr();
+        loginAttemptService.checkAllowed(request.email(), ip);
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
+        } catch (AuthenticationException e) {
+            loginAttemptService.registerFailure(request.email(), ip);
+            throw e;
+        }
+        loginAttemptService.registerSuccess(request.email());
 
         // 2. Trocar o id da sessão: um id que alguém já conhecia deixa de valer
         // (fixação de sessão).
