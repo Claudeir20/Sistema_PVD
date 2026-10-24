@@ -5,13 +5,15 @@ import {
   useState,
   type PropsWithChildren,
 } from "react"
-import { ApiError } from "../../services/api"
+import { ApiError, onSessionExpired } from "../../services/api"
 import * as authService from "../../services/auth"
 import type { AuthUser } from "../../services/auth"
 
 interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
+  /** A sessão expirou com o app aberto (a tela de login avisa). */
+  sessionExpired: boolean
   login: (email: string, password: string) => Promise<AuthUser>
   logout: () => Promise<void>
 }
@@ -22,6 +24,16 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sessionExpired, setSessionExpired] = useState(false)
+
+  // Sessão expirou no servidor: limpa o usuário e o RequireAuth manda para o login.
+  useEffect(() => {
+    onSessionExpired(() => {
+      setUser(null)
+      setSessionExpired(true)
+    })
+    return () => onSessionExpired(null)
+  }, [])
 
   useEffect(() => {
     authService
@@ -40,6 +52,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   async function login(email: string, password: string) {
     const loggedUser = await authService.login(email, password)
     setUser(loggedUser)
+    setSessionExpired(false)
     return loggedUser
   }
 
@@ -51,7 +64,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, sessionExpired, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )
