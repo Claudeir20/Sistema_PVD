@@ -26,7 +26,7 @@ public record ImportProductItem(
     Integer minStock,
 
     @PositiveOrZero (message = "O estoque inicial não pode ser negativo")
-    int initialStock
+    Integer initialStock
 ) {
     
 }

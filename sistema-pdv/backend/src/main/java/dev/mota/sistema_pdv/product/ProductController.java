@@ -71,4 +71,9 @@ public class ProductController {
     public List<ProductMovementResponse> movements(@PathVariable UUID id) {
         return productService.findMovementOfProduct(id);
     }
+
+    @PostMapping("/import")
+    public ImportProductsResponse imporAll(@Valid @RequestBody ImportProductsRequest request) {
+        return productService.importAll(request.products());
+    }
 }

@@ -168,7 +168,7 @@ public class ProductService {
         for (ImportProductItem item : items) {
             Product product = productRepository.save(
                     Product.create(item.barcode(), item.name(), item.priceInCents(), item.minStock()));
-            if (item.initialStock() > 0) {
+            if (item.initialStock() != null && item.initialStock() > 0) {
                 entry.addProduct(product, item.initialStock());
                 withInitialStock++;
             }
