@@ -92,7 +92,7 @@ public class UserService {
         User user = getUser(id);
 
         if (user.getEmail().equals(loggedEmail)) {
-            throw new ConflictException(loggedEmail)
+            throw new ConflictException(loggedEmail);
         }
 
         user.changeRole(role);
