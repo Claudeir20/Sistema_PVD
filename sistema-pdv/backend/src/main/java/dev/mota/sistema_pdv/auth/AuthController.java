@@ -63,7 +63,7 @@ public class AuthController {
         }
         loginAttemptService.registerSuccess(request.email());
 
-        // 2. Trocar o id da sessão: um id que alguém já conhecia deixa de valer
+         // 2. Trocar o id da sessão: um id que alguém já conhecia deixa de valer
         // (fixação de sessão).
         httpRequest.getSession(true);
         httpRequest.changeSessionId();
