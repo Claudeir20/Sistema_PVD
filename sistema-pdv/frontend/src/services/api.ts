@@ -1,10 +1,13 @@
 /** Erro vindo da API: o status HTTP e a mensagem em português do backend. */
 export class ApiError extends Error {
   readonly status: number
+  /** O JSON de erro inteiro, para respostas com mais que a mensagem (ex.: erros por linha). */
+  readonly body: unknown
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, body: unknown = null) {
     super(message)
     this.status = status
+    this.body = body
   }
 }
 
@@ -65,7 +68,7 @@ export async function apiFetch<T>(
     }
 
     const body = await response.json().catch(() => null)
-    if (body?.message) throw new ApiError(response.status, body.message)
+    if (body?.message) throw new ApiError(response.status, body.message, body)
 
     // Sem a mensagem do backend: 5xx quase sempre é o servidor fora do ar.
     throw new ApiError(

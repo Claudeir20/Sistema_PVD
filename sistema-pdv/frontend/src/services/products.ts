@@ -1,5 +1,5 @@
 import type { Product } from "../domain/types"
-import { apiFetch } from "./api"
+import { ApiError, apiFetch } from "./api"
 
 /** O que GET /api/products devolve (ProductResponse do backend). */
 export interface ProductResponse {
@@ -205,4 +205,68 @@ export async function adjustProductStock(
   )
   void loadProducts()
   return adjusted
+}
+
+// --- Arquivados e importação (tela do admin) ---
+
+export function fetchArchivedProducts() {
+  return apiFetch<ProductResponse[]>("/api/products/archived")
+}
+
+/** Volta a aparecer no PDV, com o estoque que tinha quando foi arquivado. */
+export async function reactivateProduct(productId: string) {
+  const reactivated = await apiFetch<ProductResponse>(
+    `/api/products/${productId}/reactivate`,
+    { method: "POST" },
+  )
+  void loadProducts()
+  return reactivated
+}
+
+/** Uma linha do arquivo, já convertida para o formato do backend. */
+export interface ImportProductItem {
+  line: number
+  barcode: string
+  name: string
+  priceInCents: number
+  minStock: number
+  initialStock: number | null
+}
+
+export interface ImportLineError {
+  line: number
+  message: string
+}
+
+/** Recusa do backend com os erros por linha (código repetido, já cadastrado). */
+export class ImportRejectedError extends Error {
+  readonly errors: ImportLineError[]
+
+  constructor(message: string, errors: ImportLineError[]) {
+    super(message)
+    this.errors = errors
+  }
+}
+
+/** Tudo ou nada: se uma linha falhar no backend, nenhum produto é gravado. */
+export async function importProducts(items: ImportProductItem[]) {
+  try {
+    const result = await apiFetch<{
+      created: number
+      withInitialStock: number
+    }>("/api/products/import", {
+      method: "POST",
+      body: JSON.stringify({ products: items }),
+    })
+    void loadProducts()
+    return result
+  } catch (error) {
+    if (error instanceof ApiError) {
+      const body = error.body as { errors?: ImportLineError[] } | null
+      if (Array.isArray(body?.errors)) {
+        throw new ImportRejectedError(error.message, body.errors)
+      }
+    }
+    throw error
+  }
 }
