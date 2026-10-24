@@ -7,11 +7,14 @@ interface KeyboardShortcutActions {
   onCustomer: () => void
   onDiscount: () => void
   onFinish: () => void
+  /** F8: imprime o comprovante da última venda (quando existe uma). */
+  canPrint: boolean
+  onPrint: () => void
 }
 
 type ShortcutAction = Exclude<
   keyof KeyboardShortcutActions,
-  "canFinish" | "disabled"
+  "canFinish" | "disabled" | "canPrint"
 >
 
 export default function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
@@ -27,6 +30,7 @@ export default function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
         F2: "onSearch",
         F4: "onCustomer",
         F6: "onDiscount",
+        F8: "onPrint",
         F10: "onFinish",
       }
       const action = shortcuts[event.key]
@@ -38,6 +42,7 @@ export default function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
       if (actionsRef.current.disabled) return
 
       if (action === "onFinish" && !actionsRef.current.canFinish) return
+      if (action === "onPrint" && !actionsRef.current.canPrint) return
 
       actionsRef.current[action]()
     }

@@ -199,7 +199,8 @@ export async function registerSale(input: RegisterSaleInput) {
   // O backend baixou o estoque: recarrega para a busca e o painel mostrarem o saldo novo.
   void loadProducts()
 
-  return sale
+  // A resposta inteira vai junto: o comprovante precisa do vendedor e dos itens gravados.
+  return { ...sale, response }
 }
 
 /** Detalhe de uma venda: itens, vendedor, CPF e totais. */
