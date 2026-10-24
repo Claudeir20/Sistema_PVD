@@ -45,12 +45,18 @@ export default function PosPage() {
         />
 
         {sale.notice ? (
-          <p
-            className="rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700"
-            role="status"
-          >
-            {sale.notice}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
+            <p role="status">{sale.notice}</p>
+            {sale.lastSale && sale.notice.includes(sale.lastSale.number) ? (
+              <Button
+                className="min-h-9 px-3"
+                onClick={sale.printLastReceipt}
+                variant="primary"
+              >
+                Imprimir comprovante (F8)
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </section>
 
@@ -117,6 +123,8 @@ export default function PosPage() {
               : "Finalizar venda (F10)"}
         </Button>
       </aside>
+
+      {sale.receiptElement}
 
       <CustomerDialog
         customer={sale.customer}

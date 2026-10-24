@@ -11,6 +11,7 @@ import {
   registerSale,
   validateSaleStock,
   type RegisterSaleItem,
+  type SaleResponse,
 } from "../../../services/sales"
 import {
   addCartItem,
@@ -26,6 +27,7 @@ import {
   transitionSaleStatus,
   type SaleStatus,
 } from "../saleStatus"
+import useReceiptPrinter from "../../receipt/useReceiptPrinter"
 import useKeyboardShortcuts from "./useKeyboardShortcuts"
 
 if (import.meta.hot) {
@@ -48,6 +50,9 @@ export default function usePosSale() {
   const [pixPayment, setPixPayment] = useState<PixPayment | null>(null)
   const [loadingPix, setLoadingPix] = useState(false)
   const [notice, setNotice] = useState("")
+  // A última venda concluída nesta tela: o caixa pode imprimir o comprovante dela.
+  const [lastSale, setLastSale] = useState<SaleResponse | null>(null)
+  const { printReceipt, receiptElement } = useReceiptPrinter()
   // Enquanto a API responde: impede o segundo clique (venda duplicada).
   const [submitting, setSubmitting] = useState(false)
 
@@ -101,6 +106,7 @@ export default function usePosSale() {
         })
 
         setSaleStatus((current) => transitionSaleStatus(current, event))
+        setLastSale(sale.response)
         setCart([])
         setDiscountInCents(0)
         setCustomer(null)
@@ -215,7 +221,13 @@ export default function usePosSale() {
     onCustomer: openCustomer,
     onDiscount: openDiscount,
     onFinish: finishSale,
+    canPrint: lastSale !== null,
+    onPrint: printLastReceipt,
   })
+
+  function printLastReceipt() {
+    if (lastSale) printReceipt(lastSale)
+  }
 
   function addProduct(product: Product) {
     if (saleLocked) return "A venda está aguardando pagamento."
@@ -275,6 +287,7 @@ export default function usePosSale() {
     discountDialogOpen,
     finishSale,
     focusSearch,
+    lastSale,
     loadingPix,
     notice,
     openCustomer,
@@ -282,7 +295,9 @@ export default function usePosSale() {
     paymentMethod,
     paymentReceived,
     pixPayment,
+    printLastReceipt,
     quantity,
+    receiptElement,
     removeProduct,
     saleLocked,
     saveCustomer,

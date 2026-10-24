@@ -100,7 +100,7 @@ export default function ProductsPage() {
     if (!query) return products
     return products.filter(
       (product) =>
-        product.barcode.includes(query) ||
+        product.barcode.toLocaleLowerCase("pt-BR").includes(query) ||
         product.name.toLocaleLowerCase("pt-BR").includes(query),
     )
   }, [products, search])

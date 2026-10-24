@@ -15,3 +15,11 @@ export function storeInitials(name: string) {
       : words[0]?.slice(0, 2)
   return (letters ?? "").toUpperCase()
 }
+
+/** Dados opcionais do comprovante (cada instalação define os seus no build). */
+export const storeCnpj = import.meta.env.VITE_STORE_CNPJ?.trim() || ""
+export const storeAddress = import.meta.env.VITE_STORE_ADDRESS?.trim() || ""
+
+/** Bobina da impressora térmica: 80 mm (padrão) ou 58 mm. */
+export const receiptWidth: "80mm" | "58mm" =
+  import.meta.env.VITE_RECEIPT_WIDTH?.trim() === "58mm" ? "58mm" : "80mm"

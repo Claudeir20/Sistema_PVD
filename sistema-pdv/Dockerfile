@@ -10,6 +10,10 @@ COPY frontend/ ./
 # Nome da loja nos menus e no título da aba (cada instalação define o seu).
 # Ex.: docker build --build-arg VITE_STORE_NAME="Celulares do João" .
 ARG VITE_STORE_NAME="Minha Loja"
+# Opcionais, para o comprovante impresso: CNPJ, endereço e a largura da bobina (80mm ou 58mm).
+ARG VITE_STORE_CNPJ=""
+ARG VITE_STORE_ADDRESS=""
+ARG VITE_RECEIPT_WIDTH="80mm"
 RUN pnpm exec tsc --noEmit && pnpm test && pnpm build
 
 FROM maven:3.9-eclipse-temurin-25 AS backend

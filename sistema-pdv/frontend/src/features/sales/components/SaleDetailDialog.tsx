@@ -10,6 +10,7 @@ import {
   type SaleResponse,
 } from "../../../services/sales"
 import { formatCpf } from "../../pos/customerCpf"
+import useReceiptPrinter from "../../receipt/useReceiptPrinter"
 import {
   CANCELLATION_REASON_MAX,
   cancellationReasonError,
@@ -40,6 +41,7 @@ export default function SaleDetailDialog({
   const [canceling, setCanceling] = useState(false)
   const [cancelError, setCancelError] = useState("")
   const [reason, setReason] = useState("")
+  const { printReceipt, receiptElement } = useReceiptPrinter()
 
   useEffect(() => {
     let ignore = false
@@ -263,8 +265,11 @@ export default function SaleDetailDialog({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div
+              className={`grid gap-2 ${sale.status === "COMPLETED" ? "grid-cols-3" : "grid-cols-2"}`}
+            >
               <Button onClick={onClose}>Fechar</Button>
+              <Button onClick={() => printReceipt(sale)}>Reimprimir</Button>
               {sale.status === "COMPLETED" ? (
                 <Button onClick={() => setConfirming(true)} variant="danger">
                   Cancelar venda
@@ -274,6 +279,7 @@ export default function SaleDetailDialog({
           )}
         </div>
       ) : null}
+      {receiptElement}
     </Dialog>
   )
 }

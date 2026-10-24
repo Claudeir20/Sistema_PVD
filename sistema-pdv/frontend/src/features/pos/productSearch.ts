@@ -13,8 +13,9 @@ export function searchProducts(
 
   if (!normalizedQuery) return { type: "EMPTY" }
 
+  // Códigos internos têm letras (CAP20): compara sem diferenciar maiúsculas.
   const barcodeMatch = catalog.find(
-    (product) => product.barcode === normalizedQuery,
+    (product) => product.barcode.toLocaleLowerCase("pt-BR") === normalizedQuery,
   )
 
   if (barcodeMatch) {

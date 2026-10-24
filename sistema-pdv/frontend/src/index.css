@@ -52,3 +52,70 @@ select {
     box-shadow: none !important;
   }
 }
+
+/* --- Comprovante impresso (impressora térmica, bobina de 80 ou 58 mm) --- */
+
+.receipt-print {
+  display: none;
+}
+
+@media print {
+  /* Na impressão, só o comprovante: o app inteiro fica de fora. */
+  body > #root {
+    display: none !important;
+  }
+
+  body {
+    min-width: 0;
+    background: #fff;
+  }
+
+  .receipt-print {
+    display: block;
+    padding: 3mm 3mm 6mm;
+    color: #000;
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .receipt-print[data-width="58mm"] {
+    font-size: 9.5px;
+  }
+
+  .receipt-print p {
+    margin: 0;
+  }
+
+  .receipt-print hr {
+    margin: 2mm 0;
+    border: 0;
+    border-top: 1px dashed #000;
+  }
+
+  .receipt-center {
+    text-align: center;
+  }
+
+  .receipt-strong {
+    font-weight: 700;
+  }
+
+  .receipt-big {
+    font-size: 1.15em;
+  }
+
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 2mm;
+  }
+
+  .receipt-row span:last-child {
+    white-space: nowrap;
+  }
+
+  .receipt-item + .receipt-item {
+    margin-top: 1mm;
+  }
+}
