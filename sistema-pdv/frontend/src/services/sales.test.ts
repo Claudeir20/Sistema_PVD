@@ -56,6 +56,9 @@ const createdSale: SaleResponse = {
   customerCpf: "52998224725",
   sellerName: "Maria",
   createdAt: "2026-10-22T13:00:00Z",
+  canceledAt: null,
+  canceledByName: null,
+  cancellationReason: null,
   items: [
     {
       productId: cable.id,
@@ -298,13 +301,17 @@ describe("cancelSale", () => {
     const listener = vi.fn()
     const unsubscribe = subscribeSales(listener)
 
-    const canceled = await cancelSale(createdSale.id)
+    const canceled = await cancelSale(createdSale.id, "  Cliente desistiu  ")
 
     expect(canceled.status).toBe("CANCELED")
     expect(fetchMock.mock.calls[0][0]).toBe(
       `/api/sales/${createdSale.id}/cancel`,
     )
     expect(fetchMock.mock.calls[0][1]?.method).toBe("POST")
+    // O motivo vai sem os espaços das pontas.
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({
+      reason: "Cliente desistiu",
+    })
     expect(fetchMock).toHaveBeenCalledWith("/api/products", expect.anything())
     expect(listener).toHaveBeenCalledOnce()
     unsubscribe()

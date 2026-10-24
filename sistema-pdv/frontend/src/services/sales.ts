@@ -40,6 +40,10 @@ export interface SaleResponse {
   customerCpf: string | null
   sellerName: string
   createdAt: string
+  /** Preenchidos só na venda cancelada; quem e motivo faltam nos cancelamentos antigos. */
+  canceledAt: string | null
+  canceledByName: string | null
+  cancellationReason: string | null
   items: {
     productId: string
     productName: string
@@ -204,12 +208,14 @@ export function fetchSaleById(saleId: string) {
 }
 
 /**
- * Cancela a venda inteira (só ADMIN): o backend devolve os itens ao estoque.
+ * Cancela a venda inteira (só ADMIN), com o motivo: o backend devolve os itens ao
+ * estoque e registra quem cancelou.
  * Recarrega os produtos para o PDV ver o estoque de volta e avisa o painel.
  */
-export async function cancelSale(saleId: string) {
+export async function cancelSale(saleId: string, reason: string) {
   const canceled = await apiFetch<SaleResponse>(`/api/sales/${saleId}/cancel`, {
     method: "POST",
+    body: JSON.stringify({ reason: reason.trim() }),
   })
   void loadProducts()
   emitSalesChanged()
