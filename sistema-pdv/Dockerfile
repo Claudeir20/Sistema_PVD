@@ -7,6 +7,9 @@ RUN npm install --global pnpm@10.18.3
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
+# Nome da loja nos menus e no título da aba (cada instalação define o seu).
+# Ex.: docker build --build-arg VITE_STORE_NAME="Celulares do João" .
+ARG VITE_STORE_NAME="Minha Loja"
 RUN pnpm exec tsc --noEmit && pnpm test && pnpm build
 
 FROM maven:3.9-eclipse-temurin-25 AS backend
