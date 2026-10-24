@@ -24,6 +24,9 @@ public class SaleMapper {
                                 sale.getCustomerCpf(),
                                 sale.getSeller().getName(),
                                 sale.getCreatedAt(),
+                                sale.getCanceledAt(),
+                                sale.getCanceledBy() == null ? null : sale.getCanceledBy().getName(),
+                                sale.getCancellationReason(),
                                 sale.getItems().stream()
                                                 .map(item -> new SaleItemResponse(
                                                                 item.getProduct().getId(),

@@ -10,6 +10,11 @@ import {
   type SaleResponse,
 } from "../../../services/sales"
 import { formatCpf } from "../../pos/customerCpf"
+import {
+  CANCELLATION_REASON_MAX,
+  cancellationReasonError,
+  QUICK_CANCELLATION_REASONS,
+} from "../cancellationReason"
 
 interface SaleDetailDialogProps {
   saleId: string
@@ -34,6 +39,7 @@ export default function SaleDetailDialog({
   const [confirming, setConfirming] = useState(false)
   const [canceling, setCanceling] = useState(false)
   const [cancelError, setCancelError] = useState("")
+  const [reason, setReason] = useState("")
 
   useEffect(() => {
     let ignore = false
@@ -54,10 +60,15 @@ export default function SaleDetailDialog({
   }, [saleId])
 
   async function confirmCancel() {
+    const reasonError = cancellationReasonError(reason)
+    if (reasonError) {
+      setCancelError(reasonError)
+      return
+    }
     setCanceling(true)
     setCancelError("")
     try {
-      const canceled = await cancelSale(saleId)
+      const canceled = await cancelSale(saleId, reason)
       setSale(canceled)
       setConfirming(false)
       onCanceled(canceled)
@@ -100,6 +111,21 @@ export default function SaleDetailDialog({
             <span>·</span>
             <span>Vendedor: {sale.sellerName}</span>
           </div>
+          {sale.status === "CANCELED" ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+              <p className="font-semibold">
+                {sale.canceledByName
+                  ? `Cancelada por ${sale.canceledByName}`
+                  : "Cancelada"}
+                {sale.canceledAt
+                  ? ` em ${dateTimeFormat.format(new Date(sale.canceledAt))}`
+                  : null}
+              </p>
+              <p className="mt-0.5">
+                Motivo: {sale.cancellationReason ?? "não registrado"}
+              </p>
+            </div>
+          ) : null}
           {sale.customerCpf ? (
             <p className="text-sm text-neutral-600">
               CPF na nota:{" "}
@@ -180,6 +206,37 @@ export default function SaleDetailDialog({
                 Se o pagamento já entrou, faça a devolução do dinheiro ao
                 cliente.
               </p>
+              <label className="mt-3 block font-medium">
+                Motivo do cancelamento
+                <input
+                  autoFocus
+                  className="mt-1 block min-h-11 w-full rounded-lg border border-red-200 bg-white px-3 text-neutral-900"
+                  disabled={canceling}
+                  maxLength={CANCELLATION_REASON_MAX}
+                  onChange={(event) => {
+                    setReason(event.target.value)
+                    setCancelError("")
+                  }}
+                  placeholder="Ex.: cliente desistiu da compra"
+                  value={reason}
+                />
+              </label>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {QUICK_CANCELLATION_REASONS.map((quickReason) => (
+                  <button
+                    className="rounded-full border border-red-200 bg-white px-2.5 py-1 text-xs text-red-900 hover:bg-red-100 disabled:opacity-50"
+                    disabled={canceling}
+                    key={quickReason}
+                    onClick={() => {
+                      setReason(quickReason)
+                      setCancelError("")
+                    }}
+                    type="button"
+                  >
+                    {quickReason}
+                  </button>
+                ))}
+              </div>
               {cancelError ? (
                 <p className="mt-2 font-semibold" role="alert">
                   {cancelError}
@@ -188,7 +245,11 @@ export default function SaleDetailDialog({
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Button
                   disabled={canceling}
-                  onClick={() => setConfirming(false)}
+                  onClick={() => {
+                    setConfirming(false)
+                    setReason("")
+                    setCancelError("")
+                  }}
                 >
                   Voltar
                 </Button>

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import dev.mota.sistema_pdv.sale.dto.CancelSaleRequest;
 import dev.mota.sistema_pdv.sale.dto.CreateSaleRequest;
 import dev.mota.sistema_pdv.sale.dto.response.SaleResponse;
 import dev.mota.sistema_pdv.sale.dto.response.SaleSummaryResponse;
@@ -41,8 +42,9 @@ public class SaleController {
     }
 
     @PostMapping("/{id}/cancel")
-    public SaleResponse cancel(@PathVariable UUID id) {
-        return saleService.cancel(id);
+    public SaleResponse cancel(@PathVariable UUID id, @Valid @RequestBody CancelSaleRequest request,
+            Authentication authentication) {
+        return saleService.cancel(id, request.reason(), authentication.getName());
     }
 
     @GetMapping

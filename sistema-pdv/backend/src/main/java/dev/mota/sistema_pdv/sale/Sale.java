@@ -71,6 +71,15 @@ public class Sale {
     @Column(nullable = false)
     private long totalInCents;
 
+    private Instant canceledAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "canceled_by_id")
+    private User canceledBy;
+
+    @Column(length = 200)
+    private String cancellationReason;
+
     /**
      * Opcional: só os 11 dígitos. A validação do CPF entra na seção de Clientes.
      */
@@ -179,16 +188,26 @@ public class Sale {
      * movimentação de cancelamento, que fica registrada junto da venda.
      * Vale mesmo se o produto já foi arquivado.
      */
-    public void cancel(StockMovement cancellationMovement) {
+    public void cancel(StockMovement cancellationMovement, User canceledBy, String reason) {
         requireNotCanceled();
         if (cancellationMovement == null || cancellationMovement.getType() != StockMovementType.SALE_CANCELLATION) {
             throw new IllegalArgumentException("O cancelamento precisa de uma movimentação de cancelamento de venda.");
+        }
+        if (canceledBy == null) {
+            throw new IllegalArgumentException("Informe quem está cancelando a venda.");
+        }
+        String validReason = reason == null ? "" : reason.strip();
+        if (validReason.length() < 3) {
+            throw new IllegalArgumentException("Informe o motivo do cancelamento.");
         }
 
         for (SaleItem item : items) {
             cancellationMovement.addProduct(item.getProduct(), item.getQuantity());
         }
         this.cancellationMovement = cancellationMovement;
+        this.canceledBy = canceledBy;
+        this.cancellationReason = validReason;
+        this.canceledAt = Instant.now();
         this.status = SaleStatus.CANCELED;
     }
 
