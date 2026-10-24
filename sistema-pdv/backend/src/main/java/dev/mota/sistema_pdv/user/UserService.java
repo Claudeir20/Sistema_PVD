@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import dev.mota.sistema_pdv.auth.UserSessions;
 import dev.mota.sistema_pdv.shared.error.ConflictException;
 import dev.mota.sistema_pdv.user.dto.CreateUserRequest;
 import dev.mota.sistema_pdv.user.dto.ResetPasswordRequest;
@@ -25,6 +26,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final UserSessions userSessions;
 
     @Transactional
     public UserResponse create(CreateUserRequest request) {
@@ -84,6 +86,8 @@ public class UserService {
         }
         user.changePasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
+
+        userSessions.expireAll(user.getEmail());
     }
 
     @Transactional
@@ -96,7 +100,11 @@ public class UserService {
         }
 
         user.changeRole(role);
-        return userMapper.toResponse(userRepository.saveAndFlush(user));
+
+        UserResponse response = userMapper.toResponse(userRepository.saveAndFlush(user));
+        userSessions.expireAll(user.getEmail());
+        return response;
+
     }
 
     @Transactional
@@ -106,7 +114,9 @@ public class UserService {
             throw new ConflictException("Você não pode desativar o próprio usuário");
         }
         user.deactivate();
-        return userMapper.toResponse(userRepository.saveAndFlush(user));
+        UserResponse response = userMapper.toResponse(userRepository.saveAndFlush(user));
+        userSessions.expireAll(user.getEmail());
+        return response;
     }
 
     @Transactional
