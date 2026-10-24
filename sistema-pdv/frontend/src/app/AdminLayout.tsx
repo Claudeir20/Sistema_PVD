@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom"
+import StoreBrand from "../components/ui/StoreBrand"
 import UserMenu from "../features/auth/UserMenu"
 
 const navigation = [
@@ -7,25 +8,15 @@ const navigation = [
   { label: "Vendas", to: "/vendas" },
   { label: "Produtos", to: "/produtos" },
   { label: "Estoque", to: "/estoque" },
-  { label: "Financeiro", to: "/painel?area=financeiro" },
-  { label: "Clientes", to: "/painel?area=clientes" },
-  { label: "Notas fiscais", to: "/painel?area=notas-fiscais" },
   { label: "Usuários", to: "/usuarios" },
-  { label: "Configurações", to: "/painel?area=configuracoes" },
 ]
 
 export default function AdminLayout() {
   return (
     <div className="min-h-dvh bg-[#f4f4f2] lg:flex">
       <aside className="border-b border-neutral-200 bg-white lg:min-h-dvh lg:w-64 lg:border-b-0 lg:border-r">
-        <div className="flex items-center gap-3 px-5 py-5">
-          <div className="grid size-10 place-items-center rounded-lg border border-dashed border-neutral-400 text-[9px] uppercase text-neutral-500">
-            logo
-          </div>
-          <div>
-            <p className="font-bold text-neutral-900">Oficina Central</p>
-            <p className="text-xs text-neutral-500">Gestão da loja</p>
-          </div>
+        <div className="px-5 py-5">
+          <StoreBrand subtitle="Gestão da loja" />
         </div>
 
         <nav
@@ -36,7 +27,7 @@ export default function AdminLayout() {
             <NavLink
               className={({ isActive }) =>
                 `block shrink-0 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive && !item.to.includes("?")
+                  isActive
                     ? "bg-neutral-900 text-white"
                     : "text-neutral-700 hover:bg-neutral-100"
                 }`

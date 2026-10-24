@@ -5,7 +5,6 @@ import PageHeader from "../../components/ui/PageHeader"
 import { formatMoney } from "../../domain/formatters"
 import { useAuth } from "../auth/AuthContext"
 import useProducts from "../products/useProducts"
-import { accountsPayable } from "../../services/accountsPayable"
 import {
   calculateDashboardMetrics,
   getGreeting,
@@ -15,7 +14,6 @@ import {
 import LowStockList from "./components/LowStockList"
 import PeriodFilter from "./components/PeriodFilter"
 import SalesByDayChart from "./components/SalesByDayChart"
-import UpcomingPayables from "./components/UpcomingPayables"
 import useSalesByPeriod from "./hooks/useSalesByPeriod"
 
 export default function DashboardPage() {
@@ -45,7 +43,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-[1400px]">
         <PageHeader
           actions={<PeriodFilter onChange={setPeriod} value={period} />}
-          description="Acompanhe as vendas, o estoque e os compromissos da loja."
+          description="Acompanhe as vendas e o estoque da loja."
           title={`${getGreeting(now.getHours())}, ${firstName}`}
         />
 
@@ -99,18 +97,14 @@ export default function DashboardPage() {
           />
         </section>
 
-        <section className="mt-5">
+        <section className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.9fr)]">
           <SalesByDayChart data={dailySales} />
-        </section>
-
-        <section className="mt-5 grid gap-5 xl:grid-cols-2">
           <LowStockList
             error={productsError}
             onRetry={reload}
             products={products}
             status={productsStatus}
           />
-          <UpcomingPayables accounts={accountsPayable} now={now} />
         </section>
       </div>
     </main>

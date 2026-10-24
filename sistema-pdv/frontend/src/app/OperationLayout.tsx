@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom"
+import StoreBrand from "../components/ui/StoreBrand"
 import { useAuth } from "../features/auth/AuthContext"
 import UserMenu from "../features/auth/UserMenu"
 
@@ -17,15 +18,7 @@ export default function OperationLayout() {
     <div className="min-h-dvh w-full max-w-full overflow-x-hidden bg-[#f4f4f2]">
       <header className="no-print border-b border-[#d8d7d2] bg-white px-5 py-4">
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="grid size-10 place-items-center rounded-lg border border-dashed border-neutral-400 text-[9px] uppercase text-neutral-500">
-              logo
-            </div>
-            <div>
-              <p className="font-bold text-neutral-900">Oficina Central</p>
-              <p className="text-xs text-neutral-500">Ponto de venda</p>
-            </div>
-          </div>
+          <StoreBrand subtitle="Ponto de venda" />
 
           <nav
             aria-label="Navegação operacional"
