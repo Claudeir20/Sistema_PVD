@@ -3,7 +3,6 @@ import Badge from "../../components/ui/Badge"
 import Button from "../../components/ui/Button"
 import Card from "../../components/ui/Card"
 import PageHeader from "../../components/ui/PageHeader"
-import { formatDate } from "../../domain/formatters"
 import { roleLabels, type Role } from "../../services/auth"
 import {
   changeUserRole,
@@ -11,12 +10,14 @@ import {
   deactivateUser,
   fetchUsers,
   reactivateUser,
+  resetUserPassword,
   type CreateUserData,
   type User,
 } from "../../services/users"
 import { useAuth } from "../auth/AuthContext"
 import ChangeRoleDialog from "./components/ChangeRoleDialog"
 import DeactivateUserDialog from "./components/DeactivateUserDialog"
+import ResetPasswordDialog from "./components/ResetPasswordDialog"
 import UserFormDialog from "./components/UserFormDialog"
 
 type OpenDialog =
@@ -24,6 +25,7 @@ type OpenDialog =
   | { type: "CREATE" }
   | { type: "ROLE"; user: User }
   | { type: "DEACTIVATE"; user: User }
+  | { type: "PASSWORD"; user: User }
 
 const roleBadge: Record<Role, "info" | "neutral"> = {
   ADMIN: "info",
@@ -118,14 +120,13 @@ export default function UsersPage() {
         ) : null}
 
         <Card className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="border-b border-neutral-200 text-[11px] uppercase tracking-wider text-neutral-500">
               <tr>
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">E-mail</th>
                 <th className="px-4 py-3 font-medium">Perfil</th>
                 <th className="px-4 py-3 font-medium">Situação</th>
-                <th className="px-4 py-3 font-medium">Desde</th>
                 <th className="px-4 py-3 text-right font-medium">Ações</th>
               </tr>
             </thead>
@@ -160,9 +161,6 @@ export default function UsersPage() {
                         <Badge>Desativado</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">
-                      {formatDate(user.createdAt)}
-                    </td>
                     <td className="px-4 py-3">
                       {/* O próprio admin não muda o perfil nem se desativa: ficaria trancado fora. */}
                       {isMe ? null : (
@@ -173,8 +171,17 @@ export default function UsersPage() {
                                 onClick={() =>
                                   setDialog({ type: "ROLE", user })
                                 }
+                                title="Mudar o perfil (Administrador ou Caixa)"
                               >
-                                Mudar perfil
+                                Perfil
+                              </ActionButton>
+                              <ActionButton
+                                onClick={() =>
+                                  setDialog({ type: "PASSWORD", user })
+                                }
+                                title="Definir uma senha nova (ex.: esqueceu a senha)"
+                              >
+                                Nova senha
                               </ActionButton>
                               <ActionButton
                                 danger
@@ -242,6 +249,19 @@ export default function UsersPage() {
         />
       ) : null}
 
+      {dialog.type === "PASSWORD" ? (
+        <ResetPasswordDialog
+          onClose={closeDialog}
+          onSave={async (newPassword) => {
+            await resetUserPassword(dialog.user.id, newPassword)
+            await finish(
+              `Senha de ${dialog.user.name} redefinida. Passe a nova senha para a pessoa.`,
+            )
+          }}
+          user={dialog.user}
+        />
+      ) : null}
+
       {dialog.type === "DEACTIVATE" ? (
         <DeactivateUserDialog
           onClose={closeDialog}
@@ -262,7 +282,7 @@ function ActionButton({
 }: { danger?: boolean } & Parameters<typeof Button>[0]) {
   return (
     <Button
-      className="min-h-9 px-3 text-xs"
+      className="min-h-9 whitespace-nowrap px-3 text-xs"
       variant={danger ? "danger" : "secondary"}
       {...props}
     />

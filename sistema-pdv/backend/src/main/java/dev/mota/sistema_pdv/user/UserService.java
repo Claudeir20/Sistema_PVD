@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import dev.mota.sistema_pdv.shared.error.ConflictException;
 import dev.mota.sistema_pdv.user.dto.CreateUserRequest;
+import dev.mota.sistema_pdv.user.dto.ResetPasswordRequest;
 import dev.mota.sistema_pdv.user.dto.UserResponse;
 import dev.mota.sistema_pdv.user.exception.EmailAlreadyExistsException;
 import dev.mota.sistema_pdv.user.exception.UserNotFoundException;
@@ -76,8 +77,24 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse changeRole(UUID id, Role role) {
+    public void resetPassword(UUID userId, ResetPasswordRequest request, String loggedEmail) {
+        User user = getUser(userId);
+        if (user.getEmail().equals(loggedEmail)) {
+            throw new ConflictException("Para trocar a própria senha, use a opção Trocar minha senha.");
+        }
+        user.changePasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public UserResponse changeRole(UUID id, Role role, String loggedEmail) {
+
         User user = getUser(id);
+
+        if (user.getEmail().equals(loggedEmail)) {
+            throw new ConflictException(loggedEmail);
+        }
+
         user.changeRole(role);
         return userMapper.toResponse(userRepository.saveAndFlush(user));
     }

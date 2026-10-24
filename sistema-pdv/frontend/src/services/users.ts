@@ -38,3 +38,11 @@ export function deactivateUser(userId: string) {
 export function reactivateUser(userId: string) {
   return apiFetch<User>(`/api/users/${userId}/reactivate`, { method: "POST" })
 }
+
+/** O admin define uma senha nova para outro usuário (ex.: o caixa esqueceu). */
+export function resetUserPassword(userId: string, newPassword: string) {
+  return apiFetch<void>(`/api/users/${userId}/password`, {
+    method: "POST",
+    body: JSON.stringify({ newPassword }),
+  })
+}

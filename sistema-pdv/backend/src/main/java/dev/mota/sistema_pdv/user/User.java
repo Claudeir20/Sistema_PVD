@@ -39,7 +39,8 @@ public class User {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected User() {}
+    protected User() {
+    }
 
     private User(String name, Role role, String email, String passwordHash) {
         this.id = UUID.randomUUID();
@@ -59,12 +60,17 @@ public class User {
         return createUser(name, Role.ADMIN, email, passwordHash);
     }
 
-    /** Quem pode mudar o perfil (só ADMIN) é decidido na segurança do endpoint, não aqui. */
+    /**
+     * Quem pode mudar o perfil (só ADMIN) é decidido na segurança do endpoint, não
+     * aqui.
+     */
     public void changeRole(Role newRole) {
         this.role = validRole(newRole);
     }
 
-    /** Impede o login sem apagar o usuário, que continua aparecendo no histórico. */
+    /**
+     * Impede o login sem apagar o usuário, que continua aparecendo no histórico.
+     */
     public void deactivate() {
         if (!active) {
             throw new ConflictException("Este usuário já está desativado.");
@@ -77,6 +83,13 @@ public class User {
             throw new ConflictException("Este usuário já está ativo.");
         }
         this.active = true;
+    }
+
+    public void changePasswordHash(String newHash) {
+
+        validPasswordHash(newHash);
+
+        this.passwordHash = newHash;
     }
 
     @PrePersist
