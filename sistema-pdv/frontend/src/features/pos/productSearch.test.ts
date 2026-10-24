@@ -37,6 +37,27 @@ describe("searchProducts", () => {
     })
   })
 
+  it("finds internal codes with letters, in any case", () => {
+    const withInternalCode = [
+      ...catalog,
+      {
+        id: "case",
+        barcode: "CAP20",
+        name: "Capinha",
+        priceInCents: 2000,
+        stock: 3,
+        minStock: 1,
+      },
+    ]
+
+    for (const typed of ["CAP20", "cap20", " Cap20 "]) {
+      expect(searchProducts(withInternalCode, typed)).toEqual({
+        type: "DIRECT",
+        product: withInternalCode[3],
+      })
+    }
+  })
+
   it("returns multiple partial name matches", () => {
     expect(searchProducts(catalog, "cabo")).toEqual({
       type: "MULTIPLE",
