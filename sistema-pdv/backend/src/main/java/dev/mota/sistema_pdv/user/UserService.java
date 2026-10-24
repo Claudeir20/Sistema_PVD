@@ -87,8 +87,14 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse changeRole(UUID id, Role role) {
+    public UserResponse changeRole(UUID id, Role role, String loggedEmail) {
+
         User user = getUser(id);
+
+        if (user.getEmail().equals(loggedEmail)) {
+            throw new ConflictException(loggedEmail)
+        }
+
         user.changeRole(role);
         return userMapper.toResponse(userRepository.saveAndFlush(user));
     }

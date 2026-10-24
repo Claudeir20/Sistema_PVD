@@ -45,8 +45,9 @@ public class UserController {
     }
 
     @PutMapping("/{id}/role")
-    public UserResponse changeRole(@PathVariable UUID id, @Valid @RequestBody ChangeRoleRequest request) {
-        return userService.changeRole(id, request.role());
+    public UserResponse changeRole(@PathVariable UUID id, @Valid @RequestBody ChangeRoleRequest request,
+            Authentication authentication) {
+        return userService.changeRole(id, request.role(), authentication.getName());
     }
 
     @PostMapping("/{id}/deactivate")
