@@ -4,8 +4,8 @@ public class TooManyLoginAttemptsException extends RuntimeException {
     private final long retryAfterSeconds;
 
     public TooManyLoginAttemptsException(long retryAfterSeconds) {
-        super("Muitas tentativas de login. Tente Novamente em "
-                + Math.max(1, (retryAfterSeconds + 59) / 60) + "minutos(s).");
+       super("Muitas tentativas de login. Tente novamente em "
+        + Math.max(1, (retryAfterSeconds + 59) / 60) + " minuto(s).");
         this.retryAfterSeconds = retryAfterSeconds;
     }
 
