@@ -47,6 +47,11 @@ public class ProductController {
         return productService.archive(id);
     }
 
+    @GetMapping("/archived")
+    public List<ProductResponse> archived() {
+        return productService.findAllArchived();
+    }
+
     @PostMapping("/{id}/reactivate")
     public ProductResponse reactivate(@PathVariable UUID id) {
         return productService.reactivate(id);

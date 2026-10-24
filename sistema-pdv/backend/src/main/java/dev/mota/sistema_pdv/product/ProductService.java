@@ -5,6 +5,8 @@ import dev.mota.sistema_pdv.movements.StockMovement;
 import dev.mota.sistema_pdv.movements.StockMovementRepository;
 import dev.mota.sistema_pdv.movements.StockMovementType;
 import dev.mota.sistema_pdv.product.dto.*;
+import dev.mota.sistema_pdv.product.exception.ImportValidationException; // novo
+import dev.mota.sistema_pdv.product.exception.ImportValidationException.LineError; // novo
 import dev.mota.sistema_pdv.product.exception.ProductAlreadyExistsException;
 import dev.mota.sistema_pdv.product.exception.ProductNotFoundException;
 import dev.mota.sistema_pdv.shared.error.ConflictException;
@@ -12,7 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList; // novo
+import java.util.HashSet; // novo
 import java.util.List;
+import java.util.Set; // novo
 import java.util.UUID;
 
 @Service
@@ -41,11 +46,11 @@ public class ProductService {
         Product product = findProduct(productId);
 
         if (!product.getVersion().equals(request.version())) {
-            throw new ConflictException("Este produto foi alterado por outra pessoa. Atualize a página e tente novamente.");
+            throw new ConflictException(
+                    "Este produto foi alterado por outra pessoa. Atualize a página e tente novamente.");
         }
 
         product.updateDetails(request.name(), request.priceInCents(), request.minStock());
-
 
         return productMapper.toResponse(productRepository.saveAndFlush(product));
     }
@@ -55,6 +60,13 @@ public class ProductService {
         Product product = findProduct(productId);
         product.archive();
         return productMapper.toResponse(productRepository.saveAndFlush(product));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> findAllArchived() {
+        return productRepository.findAllActiveFalseOrderByNameAsc().stream()
+                .map(productMapper::toResponse)
+                .toList();
     }
 
     @Transactional
@@ -83,7 +95,6 @@ public class ProductService {
 
         stockMovement.addProduct(product, quantity);
         stockMovementRepository.save(stockMovement);
-
 
     }
 
@@ -129,6 +140,43 @@ public class ProductService {
         return productRepository.findHistoryOfProduct(productId).stream()
                 .map(productMovementItemsMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public ImportProductsResponse importAll(List<ImportProductItem> items) {
+        List<LineError> errors = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        Set<String> existing = productRepository.findExistingBarcodes(
+                items.stream().map(item -> item.barcode().strip()).toList());
+
+        for (ImportProductItem item : items) {
+            String barcode = item.barcode().strip();
+            if (!seen.add(barcode)) {
+                errors.add(new LineError(item.line(), "Código " + barcode + " repetido no arquivo."));
+            } else if (existing.contains(barcode)) {
+                errors.add(new LineError(item.line(), "Código " + barcode + " já está cadastrado."));
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new ImportValidationException(errors);
+        }
+
+        // Um lote só de entrada para todo o estoque inicial (aparece assim no
+        // histórico).
+        StockMovement entry = StockMovement.create(StockMovementType.ENTRY, "Importação de produtos");
+        int withInitialStock = 0;
+        for (ImportProductItem item : items) {
+            Product product = productRepository.save(
+                    Product.create(item.barcode(), item.name(), item.priceInCents(), item.minStock()));
+            if (item.initialStock() > 0) {
+                entry.addProduct(product, item.initialStock());
+                withInitialStock++;
+            }
+        }
+        if (withInitialStock > 0) {
+            stockMovementRepository.save(entry);
+        }
+        return new ImportProductsResponse(items.size(), withInitialStock);
     }
 
     private Product findProduct(UUID productId) {
